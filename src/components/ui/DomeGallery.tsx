@@ -558,7 +558,6 @@ export default function DomeGallery({
     focusedElRef.current = el;
     el.setAttribute("data-focused", "true");
 
-    // Read the embedded data for our Info Overlay
     const rawSrc =
       parent.dataset.src ||
       (el.querySelector("img") as HTMLImageElement)?.src ||
@@ -567,8 +566,6 @@ export default function DomeGallery({
       parent.dataset.alt ||
       (el.querySelector("img") as HTMLImageElement)?.alt ||
       "";
-    const rawCat = parent.dataset.category || "";
-    const rawDesc = parent.dataset.description || "";
 
     const offsetX = getDataNumber(parent, "offsetX", 0);
     const offsetY = getDataNumber(parent, "offsetY", 0);
@@ -621,54 +618,25 @@ export default function DomeGallery({
 
     const overlay = document.createElement("div");
     overlay.className = "enlarge";
-    overlay.style.cssText = `position:absolute; left:${frameR.left - mainR.left}px; top:${frameR.top - mainR.top}px; width:${frameR.width}px; height:${frameR.height}px; opacity:0; z-index:30; will-change:transform,opacity; transform-origin:top left; transition:transform ${enlargeTransitionMs}ms ease, opacity ${enlargeTransitionMs}ms ease; border-radius:${openedImageBorderRadius}; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,.5); cursor: zoom-out;`;
+    overlay.style.cssText = `position:absolute; left:${frameR.left - mainR.left}px; top:${frameR.top - mainR.top}px; width:${frameR.width}px; height:${frameR.height}px; opacity:0; z-index:30; will-change:transform,opacity; transform-origin:top left; transition:transform ${enlargeTransitionMs}ms ease, opacity ${enlargeTransitionMs}ms ease; border-radius:${openedImageBorderRadius}; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.5); cursor: zoom-out;`;
 
     const img = document.createElement("img");
     img.src = rawSrc;
     img.alt = rawAlt;
-    img.style.cssText = `width:100%; height:100%; object-fit:cover; filter:${grayscale ? "grayscale(1)" : "none"}; pointer-events: none;`;
+    img.style.cssText = `width:100%; height:100%; object-fit:contain; background-color: rgba(0,0,0,0.8); filter:${grayscale ? "grayscale(1)" : "none"}; pointer-events: none;`;
     overlay.appendChild(img);
-
-    // --- INJECT THE INFO PANEL HERE ---
-    const infoPanel = document.createElement("div");
-    infoPanel.style.cssText = `
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 40px 30px 30px;
-      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
-      color: white;
-      display: flex; flex-direction: column; gap: 8px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 400ms ease, transform 400ms ease;
-      pointer-events: none;
-    `;
-    infoPanel.innerHTML = `
-      <span style="color: #00E5FF; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;">${rawCat}</span>
-      <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0; line-height: 1.1;">${rawAlt}</h2>
-      ${rawDesc ? `<p style="font-size: 0.95rem; opacity: 0.85; margin: 0; line-height: 1.5; max-width: 90%;">${rawDesc}</p>` : ""}
-    `;
-    overlay.appendChild(infoPanel);
-    // ----------------------------------
 
     viewerRef.current!.appendChild(overlay);
 
     const validSx0 = Math.max(tileR.width / frameR.width, 0.01);
     const validSy0 = Math.max(tileR.height / frameR.height, 0.01);
 
-    overlay.style.transform = `translate(${tileR.left - frameR.left}px, ${tileR.top - frameR.top}px) scale(${validSx0}, ${validSy0})`;
+    overlay.style.transform = `translate(${tileR.left - frameR.left}px, ${tileR.top - frameR.top}px) scale(${validSx0}, validSy0)`;
 
     setTimeout(() => {
       if (!overlay.parentElement) return;
       overlay.style.opacity = "1";
       overlay.style.transform = "translate(0px, 0px) scale(1, 1)";
-
-      // Animate the text up slightly after the overlay scales
-      setTimeout(() => {
-        infoPanel.style.opacity = "1";
-        infoPanel.style.transform = "translateY(0)";
-      }, 100);
-
       rootRef.current?.setAttribute("data-enlarging", "true");
     }, 16);
   };
@@ -681,8 +649,7 @@ export default function DomeGallery({
     .sphere { transform: translateZ(calc(var(--radius) * -1)); will-change: transform; position: absolute; }
     .sphere-item { width: calc(var(--item-width) * var(--item-size-x)); height: calc(var(--item-height) * var(--item-size-y)); position: absolute; top: -999px; bottom: -999px; left: -999px; right: -999px; margin: auto; transform-origin: 50% 50%; backface-visibility: hidden; transition: transform 300ms; transform: rotateY(calc(var(--rot-y) * (var(--offset-x) + ((var(--item-size-x) - 1) / 2)) + var(--rot-y-delta, 0deg))) rotateX(calc(var(--rot-x) * (var(--offset-y) - ((var(--item-size-y) - 1) / 2)) + var(--rot-x-delta, 0deg))) translateZ(var(--radius)); }
     .sphere-root[data-enlarging="true"] .scrim { opacity: 1 !important; pointer-events: all !important; }
-    @media (max-aspect-ratio: 1/1) { .viewer-frame { height: auto !important; width: 100% !important; } }
-    .item__image { position: absolute; inset: 10px; border-radius: var(--tile-radius, 12px); overflow: hidden; cursor: pointer; backface-visibility: hidden; transition: transform 300ms; pointer-events: auto; transform: translateZ(0); }
+    .item__image { position: absolute; inset: 10px; border-radius: var(--tile-radius, 12px); overflow: hidden; cursor: zoom-in; backface-visibility: hidden; transition: transform 300ms; pointer-events: auto; transform: translateZ(0); }
     .item__image--reference { position: absolute; inset: 10px; pointer-events: none; }
   `;
 
@@ -716,8 +683,6 @@ export default function DomeGallery({
                   className="sphere-item absolute m-auto"
                   data-src={it.src}
                   data-alt={it.alt}
-                  data-category={it.category}
-                  data-description={it.description}
                   data-offset-x={it.x}
                   data-offset-y={it.y}
                   data-size-x={it.sizeX}
@@ -807,13 +772,14 @@ export default function DomeGallery({
               ref={scrimRef}
               className="scrim absolute inset-0 z-10 pointer-events-none opacity-0 transition-opacity duration-500"
               style={{
-                background: "rgba(0, 0, 0, 0.6)",
-                backdropFilter: "blur(5px)",
+                background: "rgba(0, 0, 0, 0.85)",
+                backdropFilter: "blur(10px)",
               }}
             />
+            {/* Increased Size Frame for the Clicked Image */}
             <div
               ref={frameRef}
-              className="viewer-frame h-full aspect-square flex"
+              className="viewer-frame w-[90vw] max-w-6xl h-[85vh] max-h-[900px] flex"
               style={{
                 borderRadius: `var(--enlarge-radius, ${openedImageBorderRadius})`,
               }}

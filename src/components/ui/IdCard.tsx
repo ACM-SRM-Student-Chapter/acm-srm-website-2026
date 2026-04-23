@@ -2,6 +2,14 @@
 
 import { motion } from "framer-motion";
 import { Linkedin, Github, Instagram } from "lucide-react";
+import { Playfair_Display, Anton } from "next/font/google";
+
+// Initialize Google Fonts
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+});
+const anton = Anton({ subsets: ["latin"], weight: "400" });
 
 interface IdCardProps {
   name: string;
@@ -71,26 +79,28 @@ export default function IdCard({
           <div className="h-2 w-10 rounded-full bg-black/50 shadow-inner" />{" "}
           {/* Punch hole */}
           <div className="mt-4 text-[10px] font-black tracking-[0.2em] text-foreground/40">
-            ACM SRMIST CHAPTER
+            ACM Student Chapter SRMIST
           </div>
         </div>
 
         {/* Profile Image (Square cut) */}
-        <div className="mx-auto h-32 w-32 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-inner z-10 relative">
+        <div className="mx-auto h-45 w-40 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-inner z-10 relative">
           <img
             src={image}
             alt={name}
-            className="h-full w-full object-cover grayscale transition-all duration-500 hover:grayscale-0 hover:scale-110"
+            className="h-full w-full object-cover transition-all duration-500 hover:scale-110"
           />
         </div>
 
         {/* Identification Text */}
         <div className="flex flex-1 flex-col items-center justify-center p-6 text-center z-10">
-          <h3 className="text-xl font-black leading-tight text-foreground uppercase">
+          <h3
+            className={`text-2xl leading-tight text-foreground uppercase ${anton.className} tracking-wide`}
+          >
             {name}
           </h3>
           <div
-            className={`mt-2 font-bold uppercase tracking-widest text-[10px] ${textMap[color] || textMap.electric}`}
+            className={`mt-2 font-bold uppercase tracking-widest text-[11px] ${textMap[color] || textMap.electric} ${playfair.className} italic`}
           >
             {role}
           </div>

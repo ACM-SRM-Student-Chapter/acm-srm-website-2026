@@ -3,6 +3,14 @@
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Linkedin, Github, Instagram, Globe } from "lucide-react";
+import { Playfair_Display, Anton } from "next/font/google";
+
+// Initialize Google Fonts
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+});
+const anton = Anton({ subsets: ["latin"], weight: "400" });
 
 // We keep the interface local to prevent Turbopack import crashes
 interface TeamCardProps {
@@ -79,7 +87,7 @@ export default function TeamCard({
         <img
           src={image}
           alt={name}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
       </motion.div>
 
@@ -132,14 +140,16 @@ export default function TeamCard({
 
       <motion.div
         style={{ transform: "translateZ(60px)" }}
-        className="relative z-30 w-full text-center transition-transform duration-500 group-hover:-translate-y-4"
+        className="relative z-30 w-full text-center transition-transform duration-500 group-hover:-translate-y-4 px-2"
       >
         <div
-          className={`mb-3 inline-block rounded-full px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest shadow-lg ${colorMap[accentColor] || colorMap.blue}`}
+          className={`mb-3 inline-block rounded-full px-4 py-1.5 text-[11px] font-extrabold uppercase tracking-widest shadow-lg ${playfair.className} italic ${colorMap[accentColor] || colorMap.blue}`}
         >
           {role}
         </div>
-        <h3 className="text-2xl font-black text-white drop-shadow-lg">
+        <h3
+          className={`text-2xl md:text-3xl text-white drop-shadow-lg uppercase tracking-wide break-words whitespace-normal leading-tight ${anton.className}`}
+        >
           {name}
         </h3>
       </motion.div>
