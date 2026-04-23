@@ -82,7 +82,7 @@ export default function JoinUsPage() {
   // ==========================================
   // TOGGLE THIS TRUE/FALSE TO OPEN/CLOSE RECRUITMENTS
   // ==========================================
-  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(false);
 
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
