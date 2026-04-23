@@ -80,6 +80,7 @@ const CATEGORIES: Category[] = [
 ];
 
 // Keep arrays outside the component so they're never re-created on render.
+// FIX: Added ": GalleryItem" to the map return to prevent TypeScript string widening error
 const RECRUITMENT_IMAGES: GalleryItem[] = [
   "/Gallery/Recruitment/10.jpg",
   "/Gallery/Recruitment/20260402_170046.jpg",
@@ -98,7 +99,7 @@ const RECRUITMENT_IMAGES: GalleryItem[] = [
   "/Gallery/Recruitment/IMG-20260405-WA0008.jpg",
   "/Gallery/Recruitment/IMG-20260405-WA0009.jpg",
   "/Gallery/Recruitment/IMG20260410191506.jpg",
-].map((src) => ({ src, category: "RECRUITMENT DRIVE 2026" }));
+].map((src): GalleryItem => ({ src, category: "RECRUITMENT DRIVE 2026" }));
 
 const SYMPOSIUM_IMAGES: GalleryItem[] = [
   "/Gallery/SYMPOSIUM_ON_RESPONSIBLE_AI/00a37094-d24b-417f-b9b0-bec717cd1e8c.JPG",
@@ -142,7 +143,7 @@ const SYMPOSIUM_IMAGES: GalleryItem[] = [
   "/Gallery/SYMPOSIUM_ON_RESPONSIBLE_AI/PHOTO-2026-03-18-12-38-00.jpg",
   "/Gallery/SYMPOSIUM_ON_RESPONSIBLE_AI/PHOTO-2026-03-18-12-38-07.jpg",
   "/Gallery/SYMPOSIUM_ON_RESPONSIBLE_AI/PHOTO-2026-03-18-12-38-12.jpg",
-].map((src) => ({ src, category: "SYMPOSIUM ON RESPONSIBLE AI" }));
+].map((src): GalleryItem => ({ src, category: "SYMPOSIUM ON RESPONSIBLE AI" }));
 
 const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/24-2-26.jpg",
@@ -208,7 +209,7 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/IMG_7794.jpg",
   "/Gallery/Team_Moments/IMG_7795.jpg",
   "/Gallery/Team_Moments/IMG_7797.jpg",
-].map((src) => ({ src, category: "Team Moments" }));
+].map((src): GalleryItem => ({ src, category: "Team Moments" }));
 
 // Single source-of-truth array, stable across renders
 const ALL_GALLERY_DATA: GalleryItem[] = [
@@ -244,7 +245,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }, // FIX: Added "as const"
   },
 };
 

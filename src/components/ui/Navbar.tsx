@@ -33,7 +33,7 @@ export default function Navbar() {
 
   // Smooth liquid spring for the "water drop" moving effect
   const liquidSpring = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 400,
     damping: 30,
     mass: 0.8,

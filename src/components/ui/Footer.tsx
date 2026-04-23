@@ -14,6 +14,7 @@ import {
   Phone,
   Youtube,
   ArrowUp,
+  LucideIcon, // FIX: Imported the official type from lucide-react
 } from "lucide-react";
 import { motion, Variants, useReducedMotion } from "framer-motion";
 import { Playfair_Display, Anton, Inter } from "next/font/google";
@@ -134,7 +135,7 @@ const SocialButton = memo(
   }: {
     href: string;
     name: string;
-    Icon: React.ElementType;
+    Icon: LucideIcon; // FIX: Strict official typing applied here
   }) => {
     const prefersReducedMotion = useReducedMotion();
     return (
