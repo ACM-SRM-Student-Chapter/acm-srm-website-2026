@@ -298,7 +298,7 @@ const STUDENT_CORE: (Member & { color: string })[] = [
   {
     name: "Shreevatsa Yeelarthi",
     role: "Vice Chairperson",
-    image: "",
+    image: "/Team/vc.webp",
     color: "blue",
     socials: {
       linkedin: "https://www.linkedin.com/in/shreevatsa-yeelarthi-920a19306/",
@@ -440,7 +440,7 @@ const DOMAINS: Domain[] = [
       {
         name: "Krishansh Verma",
         role: "Lead",
-        image: "",
+        image: "/Team/leadpr.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/krishansh-verma-787967215/",
           instagram: "https://www.instagram.com/krishansh_031/",

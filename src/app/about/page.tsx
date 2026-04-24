@@ -124,8 +124,8 @@ const testimonials = [
       "Leading ACM SRM was a transformative experience. It is a highly collaborative environment where theoretical ideas are rapidly engineered into reality.",
   },
   {
-    name: "Rahul Agarwal",
-    role: "Vice Chairperson",
+    name: "MD NAYAJ MONDAL",
+    role: "Technical Head",
     quote:
       "The technical acceleration I've experienced here is unmatched. From architectural design to deploying open-source projects, ACM is the ultimate catalyst for developers.",
   },
