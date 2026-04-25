@@ -1,229 +1,176 @@
 "use client";
-
-import { useEffect, useRef, memo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  motion,
+  LazyMotion,
+  domAnimation,
+  m,
   useInView,
-  useSpring,
   useReducedMotion,
-  Variants,
+  useMotionValue,
+  useSpring,
 } from "framer-motion";
 import { Anton, Playfair_Display } from "next/font/google";
 
-// ─── Fonts ────────────────────────────────────────────────────────────────────
-const anton = Anton({ subsets: ["latin"], weight: "400" });
+// Font setup
+const anton = Anton({
+  subsets: ["latin"],
+  weight: "400",
+});
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
 
-// ─── Animation constants ──────────────────────────────────────────────────────
-const EASE_OUT_EXPO = [0.22, 1, 0.36, 1] as const;
-
-const containerVariants: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } },
-};
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: EASE_OUT_EXPO },
-  },
-};
-
-// ─── Static data — module scope, never recreated ─────────────────────────────
-interface StatEntry {
-  id: number;
-  label: string;
+type CounterProps = {
   value: number;
-  suffix: string;
-  // Raw hex — used for the glow and accent bar (avoids Tailwind dynamic class purging)
-  hex: string;
-  // Tailwind-safe accent classes
-  textClass: string;
-  borderClass: string;
-  bgClass: string;
-}
+  suffix?: string;
+};
 
-const STATS_DATA: StatEntry[] = [
-  {
-    id: 1,
-    label: "Projects",
-    value: 5,
-    suffix: "+",
-    hex: "#00E5FF",
-    textClass: "text-acm-electric",
-    borderClass: "border-acm-electric/30",
-    bgClass: "bg-acm-electric/8",
+/**
+ * Counter
+ *
+ * - Uses a MotionValue + spring to animate the numeric value.
+ * - Writes directly to the DOM (span.textContent) to avoid per-frame React state updates.
+ * - Throttles DOM updates to ~20fps (50ms) for a smooth but cheap animation.
+ * - Respects prefers-reduced-motion.
+ * - Provides an accessible aria-label for screen readers.
+ */
+const Counter = React.memo(
+  function Counter({ value, suffix = "" }: CounterProps) {
+    const spanRef = useRef<HTMLSpanElement | null>(null);
+    const inViewRef = useRef<HTMLSpanElement | null>(null);
+    const isInView = useInView(inViewRef, { once: true, margin: "-100px" });
+    const prefersReduced = useReducedMotion();
+
+    // Motion value and spring
+    const motionVal = useMotionValue(0);
+    const spring = useSpring(motionVal, {
+      damping: 50,
+      stiffness: 200,
+    });
+
+    // Keep an accessible text for screen readers (updated via state only when value changes)
+    const [ariaText, setAriaText] = useState(() => `${Math.floor(0)}${suffix}`);
+
+    useEffect(() => {
+      if (isInView) {
+        if (prefersReduced) {
+          // Jump to final value immediately for reduced motion users
+          motionVal.set(value);
+          setAriaText(`${value}${suffix}`);
+          if (spanRef.current)
+            spanRef.current.textContent = `${value}${suffix}`;
+        } else {
+          motionVal.set(value);
+        }
+      }
+    }, [isInView, motionVal, value, suffix, prefersReduced]);
+
+    useEffect(() => {
+      let rafId: number | null = null;
+      let lastUpdate = 0;
+
+      const unsubscribe = spring.on("change", (latest: number) => {
+        const now = performance.now();
+        // Throttle updates to ~20fps (every 50ms)
+        if (now - lastUpdate < 50) return;
+        lastUpdate = now;
+
+        const display = Math.floor(latest);
+        if (spanRef.current) {
+          // Update DOM directly to avoid React re-renders
+          spanRef.current.textContent = `${display}${suffix}`;
+        }
+        // Update aria text less frequently (only when integer changes)
+        // Use requestAnimationFrame to batch DOM writes
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          setAriaText(`${display}${suffix}`);
+        });
+      });
+
+      return () => {
+        unsubscribe();
+        if (rafId) cancelAnimationFrame(rafId);
+      };
+    }, [spring, suffix]);
+
+    return (
+      <span
+        ref={(el) => {
+          spanRef.current = el;
+          inViewRef.current = el;
+        }}
+        className="tabular-nums"
+        aria-label={ariaText}
+        role="text"
+      >
+        {/* Initial content for SSR/first paint */}0{suffix}
+      </span>
+    );
   },
-  {
-    id: 2,
-    label: "Hackathons Won",
-    value: 3,
-    suffix: "+",
-    hex: "#7B61FF",
-    textClass: "text-acm-violet",
-    borderClass: "border-acm-violet/30",
-    bgClass: "bg-acm-violet/8",
-  },
-  {
-    id: 3,
-    label: "Members",
-    value: 70,
-    suffix: "+",
-    hex: "#FF4081",
-    textClass: "text-acm-pink",
-    borderClass: "border-acm-pink/30",
-    bgClass: "bg-acm-pink/8",
-  },
-  {
-    id: 4,
-    label: "Industry Collabs",
-    value: 5,
-    suffix: "+",
-    hex: "#00E676",
-    textClass: "text-acm-green",
-    borderClass: "border-acm-green/30",
-    bgClass: "bg-acm-green/8",
-  },
+  // memo equality: only re-render if value or suffix changes
+  (prev, next) => prev.value === next.value && prev.suffix === next.suffix,
+);
+
+const statsData = [
+  { id: 1, label: "Projects", value: 2, suffix: "+" },
+  { id: 2, label: "Hackathons", value: 3, suffix: "+" },
+  { id: 3, label: "Members", value: 90, suffix: "+" },
+  { id: 4, label: "Collabs", value: 5, suffix: "+" },
 ];
 
-// ─── Counter ──────────────────────────────────────────────────────────────────
-// KEY PERFORMANCE FIX: writes directly to `textContent` via a DOM ref instead
-// of calling `setState` on every spring frame. This means ZERO React re-renders
-// during the animation — the number updates happen entirely off the React cycle.
-//
-// The original used `duration: 2000` inside useSpring — that is NOT a valid
-// spring option (springs only accept `damping` / `stiffness` / `mass`).
-// It was silently ignored, making the spring use its defaults. Fixed below.
-function Counter({
-  value,
-  suffix,
-  hex,
-}: {
-  value: number;
-  suffix: string;
-  hex: string;
-}) {
-  const spanRef = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(spanRef, { once: true, margin: "-80px" });
-  const prefersReducedMotion = useReducedMotion();
-
-  // Tuned spring: fast enough to feel snappy on small values (5→50)
-  const spring = useSpring(0, { damping: 35, stiffness: 90, mass: 0.8 });
-
-  // Trigger on scroll-into-view
-  useEffect(() => {
-    if (!isInView) return;
-    // Reduced motion: jump straight to final value, no counting animation
-    if (prefersReducedMotion) {
-      if (spanRef.current) spanRef.current.textContent = `${value}${suffix}`;
-      return;
-    }
-    spring.set(value);
-  }, [isInView, spring, value, suffix, prefersReducedMotion]);
-
-  // Direct DOM write — bypasses React reconciler entirely
-  useEffect(() => {
-    return spring.on("change", (v) => {
-      if (spanRef.current) {
-        spanRef.current.textContent = `${Math.floor(v)}${suffix}`;
-      }
-    });
-  }, [spring, suffix]);
-
-  return (
-    <span
-      ref={spanRef}
-      className="tabular-nums"
-      // Subtle glow matching the stat's accent color
-      style={{ textShadow: `0 0 40px ${hex}60` }}
-    >
-      0{suffix}
-    </span>
-  );
-}
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = memo(({ stat, index }: { stat: StatEntry; index: number }) => (
-  <motion.div
-    variants={cardVariants}
-    className="relative flex flex-col items-center justify-center text-center group"
-  >
-    {/* Vertical divider between cards on md+ */}
-    {index > 0 && (
-      <span
-        aria-hidden
-        className="absolute left-0 top-1/2 -translate-y-1/2 hidden md:block h-12 w-px bg-foreground/8"
-      />
-    )}
-
-    {/* Accent dot above the number */}
-    <span
-      aria-hidden
-      className={`mb-3 inline-block h-1.5 w-8 rounded-full transition-all duration-500 group-hover:w-12`}
-      style={{ backgroundColor: stat.hex }}
-    />
-
-    {/* Animated number */}
-    <h3
-      className={`${anton.className} text-5xl sm:text-6xl lg:text-7xl leading-none tracking-tight`}
-      style={{ color: stat.hex }}
-    >
-      <Counter value={stat.value} suffix={stat.suffix} hex={stat.hex} />
-    </h3>
-
-    {/* Label */}
-    <p
-      className={`${playfair.className} mt-3 text-xs sm:text-sm font-semibold tracking-[0.2em] text-foreground/55 uppercase`}
-    >
-      {stat.label}
-    </p>
-  </motion.div>
-));
-StatCard.displayName = "StatCard";
-
-// ─── Section ─────────────────────────────────────────────────────────────────
 export default function Stats() {
-  return (
-    <section
-      className="relative z-20 w-full py-10 sm:py-14"
-      aria-label="Chapter statistics"
-    >
-      <div className="container mx-auto px-4 sm:px-6">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-60px" }}
-          className="
-            glass-panel relative overflow-hidden
-            grid grid-cols-2 gap-y-10 gap-x-4 sm:gap-8
-            md:grid-cols-4
-            rounded-2xl sm:rounded-3xl
-            p-8 sm:p-10 md:p-12
-            shadow-[0_8px_40px_rgba(0,0,0,0.06)]
-            border border-foreground/6
-          "
-        >
-          {/* Subtle radial glow at center of the panel */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-30"
-            style={{
-              background:
-                "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(123,97,255,0.06) 0%, transparent 70%)",
-            }}
-          />
+  const prefersReduced = useReducedMotion();
 
-          {STATS_DATA.map((stat, index) => (
-            <StatCard key={stat.id} stat={stat} index={index} />
-          ))}
-        </motion.div>
-      </div>
-    </section>
+  // Animation variants (use transforms + opacity only)
+  const itemInitial = { opacity: 0, y: 20 };
+  const itemAnimate = { opacity: 1, y: 0 };
+  const hover = prefersReduced ? {} : { scale: 1.03 };
+
+  return (
+    <LazyMotion features={domAnimation}>
+      <section className="relative z-20 w-full py-12">
+        <div className="container mx-auto px-4">
+          <div className="glass-panel grid grid-cols-2 gap-6 rounded-3xl p-6 shadow-xl md:grid-cols-4 md:p-10">
+            {statsData.map((stat, index) => (
+              <m.div
+                key={stat.id}
+                initial={prefersReduced ? undefined : itemInitial}
+                whileInView={prefersReduced ? undefined : itemAnimate}
+                viewport={{ once: true }}
+                transition={{
+                  delay: index * 0.08,
+                  duration: 0.6,
+                  ease: "easeOut",
+                }}
+                whileHover={hover}
+                className="flex flex-col items-center justify-center text-center px-2 py-4"
+              >
+                <h3
+                  className={`${anton.className} bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent font-bold`}
+                  // fluid typography to reduce layout shifts across breakpoints
+                  style={{
+                    fontSize: "clamp(1.75rem, 6vw, 3.5rem)",
+                    lineHeight: 1,
+                    WebkitFontSmoothing: "antialiased",
+                    MozOsxFontSmoothing: "grayscale",
+                  }}
+                >
+                  <Counter value={stat.value} suffix={stat.suffix} />
+                </h3>
+
+                <p
+                  className={`${playfair.className} mt-2 text-xs font-medium tracking-wide text-foreground/80 uppercase`}
+                  style={{ letterSpacing: "0.08em" }}
+                >
+                  {stat.label}
+                </p>
+              </m.div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </LazyMotion>
   );
 }

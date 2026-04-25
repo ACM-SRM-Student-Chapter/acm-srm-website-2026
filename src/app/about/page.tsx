@@ -354,41 +354,54 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="w-full max-w-sm sm:max-w-3xl px-4">
+            {/* Wider container so Swiper cards effect has room on mobile */}
+            <div className="w-full max-w-xs sm:max-w-lg md:max-w-3xl px-4">
               <Swiper
                 effect={"cards"}
                 grabCursor={true}
                 modules={[EffectCards, Autoplay]}
                 autoplay={{ delay: 4000, disableOnInteraction: false }}
-                className="w-full pb-10"
+                // Extra bottom padding so the stacked cards behind aren't clipped
+                className="w-full !pb-14"
               >
                 {testimonials.map((test, index) => (
-                  <SwiperSlide key={index} className="rounded-[2.5rem]">
-                    <div className="flex h-[400px] flex-col justify-between rounded-[2.5rem] border border-white/10 bg-[#1a1a1a] p-10 shadow-2xl">
+                  <SwiperSlide
+                    key={index}
+                    className="rounded-[2rem] sm:rounded-[2.5rem]"
+                  >
+                    {/*
+            min-h instead of fixed h — card grows with content on mobile.
+            Reduced padding on small screens, generous on md+.
+            Quote font scales down on mobile so long text never overflows.
+          */}
+                    <div className="flex min-h-[360px] sm:min-h-[400px] flex-col justify-between rounded-[2rem] sm:rounded-[2.5rem] border border-white/10 bg-[#1a1a1a] p-6 sm:p-8 md:p-10 shadow-2xl">
                       <div>
-                        <div className="flex gap-1 mb-8">
+                        {/* Stars */}
+                        <div className="flex gap-1 mb-5 sm:mb-8">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className="h-5 w-5 text-pink-700 fill-yellow-500"
+                              className="h-4 w-4 sm:h-5 sm:w-5 text-pink-700 fill-yellow-500"
                             />
                           ))}
                         </div>
+
+                        {/* Quote — smaller on mobile to prevent overflow */}
                         <p
-                          className={`text-2xl text-white/90 leading-relaxed ${playfair.className} italic`}
+                          className={`text-lg sm:text-xl md:text-2xl text-white/90 leading-relaxed ${playfair.className} italic`}
                         >
                           "{test.quote}"
                         </p>
                       </div>
-                      <div className="mt-6 border-t border-white/10 pt-6 flex items-center justify-between">
-                        <div>
-                          <h4 className="font-bold text-xl text-white uppercase tracking-wider">
-                            {test.name}
-                          </h4>
-                          <p className="text-sm font-bold tracking-widest uppercase text-white/50 mt-1">
-                            {test.role}
-                          </p>
-                        </div>
+
+                      {/* Attribution */}
+                      <div className="mt-6 border-t border-white/10 pt-5 sm:pt-6">
+                        <h4 className="font-bold text-base sm:text-xl text-white uppercase tracking-wider">
+                          {test.name}
+                        </h4>
+                        <p className="text-xs sm:text-sm font-bold tracking-widest uppercase text-white/50 mt-1">
+                          {test.role}
+                        </p>
                       </div>
                     </div>
                   </SwiperSlide>

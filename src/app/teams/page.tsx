@@ -927,23 +927,30 @@ export default function TeamsPage() {
 
             {/* 1-col mobile → 2-col sm → 3-col md */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-20 gap-x-4 justify-items-center max-w-5xl mx-auto">
-              {STUDENT_CORE.map((member, idx) => (
-                <motion.div
-                  key={member.name}
-                  initial={{ opacity: 0, y: -50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{
-                    duration: 0.65,
-                    delay: (idx % 3) * 0.15,
-                    type: "spring",
-                    stiffness: 80,
-                    damping: 18,
-                  }}
-                >
-                  <IdCard {...member} />
-                </motion.div>
-              ))}
+              {STUDENT_CORE.map((member, idx) => {
+                const isLast = idx === STUDENT_CORE.length - 1;
+
+                return (
+                  <motion.div
+                    key={member.name}
+                    initial={{ opacity: 0, y: -50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-80px" }}
+                    transition={{
+                      duration: 0.65,
+                      delay: (idx % 3) * 0.15,
+                      type: "spring",
+                      stiffness: 80,
+                      damping: 18,
+                    }}
+                    className={`
+        ${isLast ? "md:col-span-3 flex justify-center" : ""}
+      `}
+                  >
+                    <IdCard {...member} />
+                  </motion.div>
+                );
+              })}
             </div>
           </section>
 

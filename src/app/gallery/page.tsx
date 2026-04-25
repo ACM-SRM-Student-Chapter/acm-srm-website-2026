@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+  useTransition,
+} from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { Playfair_Display, Anton, Inter } from "next/font/google";
 
-// ─── Fonts ───────────────────────────────────────────────────────────────────
 const playfair = Playfair_Display({
   subsets: ["latin"],
   style: ["normal", "italic"],
@@ -13,7 +19,6 @@ const playfair = Playfair_Display({
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 const inter = Inter({ subsets: ["latin"] });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Category =
   | "ALL"
   | "RECRUITMENT DRIVE 2026"
@@ -25,26 +30,25 @@ interface GalleryItem {
   category: Exclude<Category, "ALL">;
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── OPTIMIZED Skeleton ──────────────────────────────────────────────────────────
 const GallerySkeleton = () => {
   const prefersReducedMotion = useReducedMotion();
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-[#111315] relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-[#111315] relative overflow-hidden transform-gpu">
+      {/* OPTIMIZATION: Moved heavy Framer Motion JS rotation to pure CSS compositor keyframes */}
+      <style>{`
+        @keyframes spin-cw { to { transform: rotate(360deg); } }
+        @keyframes spin-ccw { to { transform: rotate(-360deg); } }
+        .skeleton-ring-cw { animation: spin-cw 10s linear infinite; }
+        .skeleton-ring-ccw { animation: spin-ccw 15s linear infinite; }
+      `}</style>
+
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_0%,transparent_70%)]" />
 
-      {/* Only spin rings if user hasn't opted out of motion */}
       {!prefersReducedMotion && (
         <>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="absolute w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full border border-white/5 border-t-acm-electric/40 border-r-acm-pink/20"
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            className="absolute w-[400px] h-[400px] md:w-[700px] md:h-[700px] rounded-full border border-white/5 border-b-acm-violet/40"
-          />
+          <div className="absolute w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full border border-white/5 border-t-acm-electric/40 border-r-acm-pink/20 skeleton-ring-cw" />
+          <div className="absolute w-[400px] h-[400px] md:w-[700px] md:h-[700px] rounded-full border border-white/5 border-b-acm-violet/40 skeleton-ring-ccw" />
         </>
       )}
 
@@ -55,7 +59,7 @@ const GallerySkeleton = () => {
             : { scale: [0.8, 1.2, 0.8], opacity: [0.2, 0.6, 0.2] }
         }
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className="w-24 h-24 rounded-full bg-white/10 blur-2xl"
+        className="w-24 h-24 rounded-full bg-white/10 blur-2xl will-change-transform"
       />
 
       <p className="absolute text-white/40 font-bold uppercase tracking-[0.3em] text-xs md:text-sm animate-pulse font-sans">
@@ -65,13 +69,11 @@ const GallerySkeleton = () => {
   );
 };
 
-// ─── Lazy 3-D Gallery ─────────────────────────────────────────────────────────
 const DomeGallery = dynamic(() => import("@/components/ui/DomeGallery"), {
   ssr: false,
   loading: () => <GallerySkeleton />,
 });
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 const CATEGORIES: Category[] = [
   "ALL",
   "RECRUITMENT DRIVE 2026",
@@ -79,8 +81,6 @@ const CATEGORIES: Category[] = [
   "Team Moments",
 ];
 
-// Keep arrays outside the component so they're never re-created on render.
-// FIX: Added ": GalleryItem" to the map return to prevent TypeScript string widening error
 const RECRUITMENT_IMAGES: GalleryItem[] = [
   "/Gallery/Recruitment/10.jpg",
   "/Gallery/Recruitment/20260402_170046.jpg",
@@ -161,7 +161,6 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/IMG20260327171314.jpg",
   "/Gallery/Team_Moments/IMG20260401173212.jpg",
   "/Gallery/Team_Moments/IMG20260401173222.jpg",
-
   "/Gallery/Team_Moments/20260421_171728.jpg",
   "/Gallery/Team_Moments/20260421_171837.jpg",
   "/Gallery/Team_Moments/20260421_171848.jpg",
@@ -175,7 +174,6 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/20260421_175304.jpg",
   "/Gallery/Team_Moments/20260421_175311.jpg",
   "/Gallery/Team_Moments/20260421_175319.jpg",
-
   "/Gallery/Team_Moments/IMG_7683.jpg",
   "/Gallery/Team_Moments/IMG_7686.jpg",
   "/Gallery/Team_Moments/IMG_7697.jpg",
@@ -211,14 +209,12 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/IMG_7797.jpg",
 ].map((src): GalleryItem => ({ src, category: "Team Moments" }));
 
-// Single source-of-truth array, stable across renders
 const ALL_GALLERY_DATA: GalleryItem[] = [
   ...RECRUITMENT_IMAGES,
   ...SYMPOSIUM_IMAGES,
   ...TEAM_IMAGES,
 ];
 
-// Pre-compute counts once so the filter bar can show them cheaply
 const CATEGORY_COUNTS: Record<Category, number> = {
   ALL: ALL_GALLERY_DATA.length,
   "RECRUITMENT DRIVE 2026": RECRUITMENT_IMAGES.length,
@@ -226,7 +222,6 @@ const CATEGORY_COUNTS: Record<Category, number> = {
   "Team Moments": TEAM_IMAGES.length,
 };
 
-// ─── Short display labels for mobile ─────────────────────────────────────────
 const SHORT_LABEL: Record<Category, string> = {
   ALL: "ALL",
   "RECRUITMENT DRIVE 2026": "RECRUITMENT",
@@ -234,7 +229,6 @@ const SHORT_LABEL: Record<Category, string> = {
   "Team Moments": "TEAM",
 };
 
-// ─── Animation variants ───────────────────────────────────────────────────────
 const containerVariants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.1 } },
@@ -245,84 +239,59 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }, // FIX: Added "as const"
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function GalleryPage() {
   const [activeFilter, setActiveFilter] = useState<Category>("ALL");
-  // Track whether we're mid-transition so we can fade the dome out/in cleanly
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [deferredFilter, setDeferredFilter] = useState<Category>("ALL");
+  const [isPending, startTransition] = useTransition();
 
-  // Memoised filtered list — only recalculated when activeFilter changes
   const filteredData = useMemo<GalleryItem[]>(
     () =>
-      activeFilter === "ALL"
+      deferredFilter === "ALL"
         ? ALL_GALLERY_DATA
-        : ALL_GALLERY_DATA.filter((item) => item.category === activeFilter),
-    [activeFilter],
+        : ALL_GALLERY_DATA.filter((item) => item.category === deferredFilter),
+    [deferredFilter],
   );
 
-  // Stable handler — avoids re-creating a new function on every render
   const handleFilterChange = useCallback(
     (cat: Category) => {
       if (cat === activeFilter) return;
-      // Flash the "transitioning" state briefly so the dome can dissolve smoothly
-      setIsTransitioning(true);
-      if (transitionTimer.current) clearTimeout(transitionTimer.current);
-      transitionTimer.current = setTimeout(() => {
-        setActiveFilter(cat);
-        setIsTransitioning(false);
-      }, 220); // just long enough for the fade-out
+      setActiveFilter(cat);
+      startTransition(() => {
+        setDeferredFilter(cat);
+      });
     },
     [activeFilter],
-  );
-
-  // Cleanup on unmount
-  useEffect(
-    () => () => {
-      if (transitionTimer.current) clearTimeout(transitionTimer.current);
-    },
-    [],
   );
 
   return (
     <div
       className={`relative flex min-h-screen flex-col items-center pb-24 pt-20 bg-[#ffffff] overflow-hidden ${inter.className}`}
     >
-      {/* ── Background ───────────────────────────────────────────────────────── */}
+      {/* OPTIMIZATION: Removed individual heavy blur items and replaced with native CSS radial gradients */}
       <div
-        aria-hidden
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: `
+          background: `
             linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px),
+            radial-gradient(circle at 25% 10%, rgba(0,229,255,0.08) 0%, transparent 50%),
+            radial-gradient(circle at 75% 30%, rgba(255,64,129,0.04) 0%, transparent 45%),
+            radial-gradient(circle at 35% 75%, rgba(123,97,255,0.08) 0%, transparent 55%)
           `,
-          backgroundSize: "40px 40px",
+          backgroundSize:
+            "40px 40px, 40px 40px, 100% 100%, 100% 100%, 100% 100%",
         }}
       />
-      <div
-        aria-hidden
-        className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-acm-electric/10 rounded-full blur-[120px] pointer-events-none z-0"
-      />
-      <div
-        aria-hidden
-        className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-acm-pink/5 rounded-full blur-[120px] pointer-events-none z-0"
-      />
-      <div
-        aria-hidden
-        className="absolute bottom-1/4 left-1/3 w-[700px] h-[700px] bg-acm-violet/10 rounded-full blur-[150px] pointer-events-none z-0"
-      />
 
-      {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="container relative z-10 mx-auto px-4 py-16 text-center"
+        className="container relative z-10 mx-auto px-4 py-16 text-center will-change-transform"
       >
         <motion.h1
           variants={fadeUp}
@@ -342,7 +311,6 @@ export default function GalleryPage() {
           community that makes ACM SRMIST thrive. Spin the dome to explore.
         </motion.p>
 
-        {/* Live photo count — updates as filter changes */}
         <motion.p
           variants={fadeUp}
           className="mt-4 text-sm font-semibold uppercase tracking-widest text-black/30"
@@ -356,22 +324,19 @@ export default function GalleryPage() {
               transition={{ duration: 0.25 }}
               className="inline-block"
             >
-              {filteredData.length} photos
+              {CATEGORY_COUNTS[activeFilter]} photos
             </motion.span>
           </AnimatePresence>
         </motion.p>
       </motion.div>
 
-      {/* ── Main content ─────────────────────────────────────────────────────── */}
       <div className="mx-auto relative z-10 w-full max-w-7xl px-4">
-        {/* Category Filters */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12 flex flex-wrap justify-center gap-2 md:gap-3"
+          className="mb-12 flex flex-wrap justify-center gap-2 md:gap-3 will-change-transform"
           role="tablist"
-          aria-label="Gallery category filter"
         >
           {CATEGORIES.map((category) => {
             const isActive = activeFilter === category;
@@ -381,22 +346,15 @@ export default function GalleryPage() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => handleFilterChange(category)}
-                className={`
-                  relative rounded-full px-4 md:px-6 py-2 md:py-2.5
-                  text-xs md:text-sm font-bold uppercase tracking-wider
-                  transition-colors duration-200 focus-visible:outline-none
-                  focus-visible:ring-2 focus-visible:ring-acm-electric/60
-                `}
+                className={`relative rounded-full px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-bold uppercase tracking-wider transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-acm-electric/60`}
               >
-                {/* Animated pill background */}
                 {isActive && (
                   <motion.div
                     layoutId="gallery-filter-pill"
-                    className="absolute inset-0 -z-10 rounded-full bg-[#111315] shadow-[0_5px_15px_rgba(0,0,0,0.12)]"
+                    className="absolute inset-0 -z-10 rounded-full bg-[#111315] shadow-[0_5px_15px_rgba(0,0,0,0.12)] will-change-transform"
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   />
                 )}
-
                 <span
                   className={
                     isActive
@@ -404,56 +362,43 @@ export default function GalleryPage() {
                       : "text-black/50 hover:text-acm-pink transition-colors duration-150"
                   }
                 >
-                  {/* Short label on mobile, full label on md+ */}
                   <span className="md:hidden">{SHORT_LABEL[category]}</span>
                   <span className="hidden md:inline">{category}</span>
                 </span>
-
-                {/* Count badge */}
-                <motion.span
-                  layout
-                  className={`
-                    ml-1.5 inline-flex items-center justify-center
-                    rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none
-                    ${isActive ? "bg-white/20 text-white" : "bg-black/8 text-black/40"}
-                    transition-colors duration-200
-                  `}
+                {/* OPTIMIZATION: Removed layout prop from counts to prevent layout thrash measuring */}
+                <span
+                  className={`ml-1.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${isActive ? "bg-white/20 text-white" : "bg-black/8 text-black/40"} transition-colors duration-200`}
                 >
                   {CATEGORY_COUNTS[category]}
-                </motion.span>
+                </span>
               </button>
             );
           })}
         </motion.div>
 
-        {/* Dome Gallery Container */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="relative w-full h-[75vh] min-h-[500px] max-h-[900px] overflow-hidden rounded-[2.5rem] border border-black/5 bg-[#111315] shadow-[0_20px_60px_rgba(0,0,0,0.15)]"
+          className="relative w-full h-[75vh] min-h-[500px] max-h-[900px] overflow-hidden rounded-[2.5rem] border border-black/5 bg-[#111315] shadow-[0_20px_60px_rgba(0,0,0,0.15)] transform-gpu"
         >
-          {/* Smooth cross-fade overlay during filter switch */}
           <AnimatePresence>
-            {isTransitioning && (
+            {isPending && (
               <motion.div
                 key="transition-overlay"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.22 }}
-                className="absolute inset-0 z-20 bg-[#111315] rounded-[2.5rem]"
-              />
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 z-20 bg-[#111315]/80 rounded-[2.5rem] backdrop-blur-sm flex items-center justify-center"
+              >
+                <div className="w-10 h-10 border-4 border-white/10 border-t-acm-electric rounded-full animate-spin" />
+              </motion.div>
             )}
           </AnimatePresence>
 
-          {/*
-            Using `key={activeFilter}` forces React to fully remount DomeGallery
-            whenever the filter changes — the physics engine rebuilds fresh with
-            the new image set. The cross-fade overlay above hides the "pop".
-          */}
+          {/* OPTIMIZATION: Removed key= prop so DOM nodes survive filter swaps */}
           <DomeGallery
-            key={activeFilter}
             images={filteredData}
             fit={0.8}
             minRadius={600}
@@ -464,7 +409,6 @@ export default function GalleryPage() {
           />
         </motion.div>
 
-        {/* Subtle hint text below dome */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

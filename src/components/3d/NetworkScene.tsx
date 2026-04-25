@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Float, Sphere, Stars, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 
-// The individual glowing nodes representing your domains (AI, Web, Cloud, etc.)
+// The individual glowing nodes representing your domains
 function NetworkNodes() {
   const groupRef = useRef<THREE.Group>(null);
 
@@ -29,11 +29,11 @@ function NetworkNodes() {
     <group ref={groupRef}>
       {nodes.map((node, i) => (
         <Float key={i} speed={2} rotationIntensity={0.5} floatIntensity={1.5}>
+          {/* OPTIMIZATION: Reduced segments from 32x32 to 16x16 (saves ~7500 triangles total) */}
           <Sphere
-            args={[0.08, 32, 32]}
+            args={[0.08, 16, 16]}
             position={new THREE.Vector3(...node.position)}
           >
-            {/* emissive materials literally glow in Three.js */}
             <meshStandardMaterial
               color={node.color}
               emissive={node.color}
@@ -48,32 +48,55 @@ function NetworkNodes() {
 }
 
 export default function NetworkScene() {
+  // OPTIMIZATION: IntersectionObserver to pause the 60fps WebGL loop when off-screen
+  const [isVisible, setIsVisible] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0 },
+    );
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="absolute inset-0 -z-10 h-full w-full overflow-hidden bg-background">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-        <ambientLight intensity={0.2} />
-        {/* The digital particle network */}
-        <Stars
-          radius={100}
-          depth={50}
-          count={2500}
-          factor={4}
-          saturation={0}
-          fade
-          speed={1}
-        />
-        <NetworkNodes />
-        {/* Allows the scene to slowly rotate, but prevents the user from zooming and breaking the layout */}
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          autoRotate
-          autoRotateSpeed={0.5}
-        />
+    <div
+      ref={containerRef}
+      className="absolute inset-0 -z-10 h-full w-full overflow-hidden bg-background"
+    >
+      <Canvas
+        // OPTIMIZATION: demand stops the render loop when invisible
+        frameloop={isVisible ? "always" : "demand"}
+        camera={{ position: [0, 0, 5], fov: 45 }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
+      >
+        <Suspense fallback={null}>
+          <ambientLight intensity={0.2} />
+          <Stars
+            radius={100}
+            depth={50}
+            count={2500}
+            factor={4}
+            saturation={0}
+            fade
+            speed={1}
+          />
+          <NetworkNodes />
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            autoRotate
+            autoRotateSpeed={0.5}
+          />
+        </Suspense>
       </Canvas>
 
-      {/* This gradient overlay seamlessly fades the bottom of the 3D canvas into the next section */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background " />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/20 to-background pointer-events-none" />
     </div>
   );
 }
