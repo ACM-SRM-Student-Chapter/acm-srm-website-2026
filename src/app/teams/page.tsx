@@ -412,13 +412,14 @@ const DOMAINS: Domain[] = [
         },
       },
       {
-        name: "Ankush Wadehra",
+        name: "Yatindra Rai",
         role: "Lead – AI/ML & MLOps",
         image: "Team/leadaiml.webp",
         socials: {
-          linkedin: "https://www.linkedin.com/in/ankush-wadehra-bb64b0258",
-          github: "https://github.com/beastgotfried",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/yatindra-rai-6a3181324/",
+          github:
+            "https://github.com/YatindraRai002?tab=overview&from=2026-07-01&to=2026-07-06",
+          instagram: "https://www.instagram.com/yatindra_0045/",
         },
       },
       {

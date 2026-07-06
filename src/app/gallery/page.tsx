@@ -184,7 +184,6 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/IMG_7720.jpg",
   "/Gallery/Team_Moments/IMG_7725.jpg",
   "/Gallery/Team_Moments/IMG_7730.jpg",
-  "/Gallery/Team_Moments/IMG_7735.jpg",
   "/Gallery/Team_Moments/IMG_7744.jpg",
   "/Gallery/Team_Moments/IMG_7749.jpg",
   "/Gallery/Team_Moments/IMG_7750.jpg",
