@@ -298,8 +298,8 @@ export default function Hero() {
             variants={fadeUp}
             className={`w-full flex flex-col items-center lg:items-start text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-tight tracking-widest uppercase ${anton.className}`}
           >
-            {/* TextPressure — responsive container uses aspect-ratio instead of fixed heights */}
-            <div className="relative h-[200px] sm:h-[300px] md:h-[350px] w-full max-w-[300px] sm:max-w-[450px] md:max-w-[550px] mb-2 sm:mb-4">
+            {/* TextPressure — container height matched to typography to minimize vertical gap */}
+            <div className="relative h-[120px] sm:h-[175px] md:h-[220px] w-full max-w-[300px] sm:max-w-[450px] md:max-w-[550px] mb-1 sm:mb-2">
               <TextPressure
                 text="ACM"
                 flex={true}
