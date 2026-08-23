@@ -32,16 +32,20 @@ const getAttr = (
   minVal: number,
   maxVal: number,
 ) => {
-  const val = maxVal - Math.abs((maxVal * distance) / maxDist);
-  return Math.max(minVal, val + minVal);
+  if (maxDist <= 0) return minVal;
+  const factor = Math.max(0, Math.min(1, 1 - distance / maxDist));
+  return minVal + (maxVal - minVal) * factor;
 };
 
-const debounce = (func: (...args: any[]) => void, delay: number) => {
+const debounce = <T extends (...args: unknown[]) => void>(
+  func: T,
+  delay: number,
+) => {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return (...args: any[]) => {
+  return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
-      func.apply(this, args);
+      func(...args);
     }, delay);
   };
 };
@@ -49,7 +53,7 @@ const debounce = (func: (...args: any[]) => void, delay: number) => {
 const TextPressure: React.FC<TextPressureProps> = ({
   text = "Compressa",
   fontFamily = "Compressa VF",
-  fontUrl = "https://res.cloudinary.com/dr6lvwubh/raw/upload/v1529908256/CompressaPRO-GX.woff2",
+  fontUrl = "/fonts/CompressaPRO-GX.woff2",
   width = true,
   weight = true,
   italic = true,
@@ -111,19 +115,36 @@ const TextPressure: React.FC<TextPressureProps> = ({
     const { width: containerW, height: containerH } =
       containerRef.current.getBoundingClientRect();
 
-    let newFontSize = containerW / (chars.length / 2);
-    newFontSize = Math.max(newFontSize, minFontSize);
+    if (containerW === 0) return;
+
+    // Adaptive width factor based on text length to prevent overflow for short text (like "ACM")
+    const widthFactor =
+      chars.length <= 3 ? 0.8 : chars.length <= 5 ? 0.65 : 0.52;
+    let calculatedFontSize = containerW / (chars.length * widthFactor);
+
+    if (containerH > 0) {
+      calculatedFontSize = Math.min(calculatedFontSize, containerH * 0.95);
+    }
+
+    let newFontSize = Math.max(calculatedFontSize, minFontSize);
+
+    // Ensure it doesn't overflow container width even if minFontSize was set high
+    if (newFontSize * chars.length * widthFactor > containerW && containerW > 0) {
+      newFontSize = containerW / (chars.length * widthFactor);
+    }
 
     setFontSize(newFontSize);
     setScaleY(1);
     setLineHeight(1);
 
     requestAnimationFrame(() => {
-      if (!titleRef.current) return;
+      if (!titleRef.current || !containerRef.current) return;
       const textRect = titleRef.current.getBoundingClientRect();
+      const currentContainerH =
+        containerRef.current.getBoundingClientRect().height;
 
-      if (scale && textRect.height > 0) {
-        const yRatio = containerH / textRect.height;
+      if (scale && textRect.height > 0 && currentContainerH > 0) {
+        const yRatio = currentContainerH / textRect.height;
         setScaleY(yRatio);
         setLineHeight(yRatio);
       }
@@ -134,6 +155,13 @@ const TextPressure: React.FC<TextPressureProps> = ({
     const debouncedSetSize = debounce(setSize, 100);
     debouncedSetSize();
     window.addEventListener("resize", debouncedSetSize);
+
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts.ready.then(() => {
+        setSize();
+      });
+    }
+
     return () => window.removeEventListener("resize", debouncedSetSize);
   }, [setSize]);
 
@@ -158,8 +186,8 @@ const TextPressure: React.FC<TextPressureProps> = ({
 
           const d = dist(mouseRef.current, charCenter);
 
-          const wdth = width ? Math.floor(getAttr(d, maxDist, 5, 200)) : 100;
-          const wght = weight ? Math.floor(getAttr(d, maxDist, 100, 900)) : 400;
+          const wdth = width ? Math.floor(getAttr(d, maxDist, 40, 200)) : 100;
+          const wght = weight ? Math.floor(getAttr(d, maxDist, 300, 900)) : 400;
           const italVal = italic ? getAttr(d, maxDist, 0, 1).toFixed(2) : "0";
           const alphaVal = alpha ? getAttr(d, maxDist, 0, 1).toFixed(2) : "1";
 
@@ -186,7 +214,7 @@ const TextPressure: React.FC<TextPressureProps> = ({
       <style>{`
         @font-face {
           font-family: '${fontFamily}';
-          src: url('${fontUrl}');
+          src: url('${fontUrl}') format('woff2');
           font-style: normal;
         }
         .stroke span {
@@ -213,8 +241,10 @@ const TextPressure: React.FC<TextPressureProps> = ({
       className="relative w-full h-full overflow-hidden bg-transparent"
     >
       {styleElement}
-      <h1
+      <div
         ref={titleRef}
+        role="heading"
+        aria-level={1}
         className={`text-pressure-title ${className} ${
           flex ? "flex justify-between" : ""
         } ${stroke ? "stroke" : ""} uppercase text-center`}
@@ -241,7 +271,7 @@ const TextPressure: React.FC<TextPressureProps> = ({
             {char === " " ? "\u00A0" : char}
           </span>
         ))}
-      </h1>
+      </div>
     </div>
   );
 };
