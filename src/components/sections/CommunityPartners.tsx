@@ -54,6 +54,7 @@ interface PartnerSocials {
   linkedin?: string;
   instagram?: string;
   twitter?: string;
+  email?: string;
 }
 
 interface PartnerCTA {
@@ -77,23 +78,29 @@ interface Partner {
 
 // ─── Static data — module scope, icons are stable React elements ──────────────
 const PARTNERS_DATA: Partner[] = [
-  {
-    name: "Next Techy Pixel",
-    description:
-      "A premier tech content creator hub focusing on AI, development tutorials, and project showcases for the next generation of builders.",
-    logo: "/communityPartners/nextTechyPixel.webp",
-    accentHex: "#FF0000",
-    cta: {
-      text: "Subscribe on YouTube",
-      link: "https://www.youtube.com/@NextTechyPixel",
-      bgClass: "bg-[#FF0000] hover:bg-[#cc0000]",
-      hex: "#FF0000",
-      icon: <Play className="h-3.5 w-3.5" aria-hidden />,
-    },
-    socials: {
-      youtube: "https://www.youtube.com/@NextTechyPixel",
-    },
+{
+  name: "Next Techy Pixel",
+  description:
+    "An independent technology brand focused on Technology Media, Software Development, IT Services, Digital Solutions, and Technology Consulting. They create practical technology content and build useful digital solutions for individuals, organisations, communities, government, and NGO initiatives.",
+  logo: "/communityPartners/nextTechyPixel.webp",
+  accentHex: "#FF0000",
+
+  cta: {
+    text: "Subscribe on YouTube",
+    link: "https://www.youtube.com/@NextTechyPixel",
+    bgClass: "bg-[#FF0000] hover:bg-[#cc0000]",
+    hex: "#FF0000",
+    icon: <Play className="h-3.5 w-3.5" aria-hidden />,
   },
+
+  socials: {
+    youtube: "https://www.youtube.com/@NextTechyPixel",
+    instagram: "https://www.instagram.com/nexttechypixel",
+    linkedin: "https://www.linkedin.com/company/next-techy-pixel/",
+    website: "https://nexttechypixel.com",
+    email: "mailto:nexttechypixel@gmail.com",
+  },
+},
   {
     name: "React Kolkata",
     description:

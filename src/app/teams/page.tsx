@@ -319,17 +319,6 @@ const STUDENT_CORE: (Member & { color: string })[] = [
     },
   },
   {
-    name: "Mahathi Indu T",
-    role: "Joint Secretary",
-    image: "/Team/JOINTSECRETARY.webp",
-    color: "pink",
-    socials: {
-      linkedin: "https://www.linkedin.com/in/mahathi-t",
-      github: "https://github.com/Mahathi935",
-      instagram: "https://www.instagram.com/moonlily593",
-    },
-  },
-  {
     name: "Amay Jariwala",
     role: "Treasurer",
     image: "/Team/Treasurer.webp",
@@ -474,19 +463,19 @@ const DOMAINS: Domain[] = [
     color: "green",
     row1: [
       {
-        name: "Dhruv Mahajan",
-        role: "Lead",
-        image: "/Team/leadsponsership.webp",
+        name: "announcing soon...",
+        role: "Head",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/dhruvmahajan22",
-          instagram: "https://www.instagram.com/dhru.v_22",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
     row2: [
       {
         name: "Yatharth Garg",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadsponsership.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/yatharth-garg2905",
@@ -495,7 +484,7 @@ const DOMAINS: Domain[] = [
       },
       {
         name: "Shreyanka Chakrabarti",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadsponsor.webp",
         socials: {
           linkedin:
@@ -511,7 +500,7 @@ const DOMAINS: Domain[] = [
     row1: [
       {
         name: "Divita Kapoor",
-        role: "Lead",
+        role: "Head",
         image: "/Team/leadcreatives.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/divita-kapoor-769327321/",
@@ -522,7 +511,7 @@ const DOMAINS: Domain[] = [
     row2: [
       {
         name: "Rishabh Dev Pandey",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadcreatives2.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/rishabh-dev-pandey-1234b7282/",
@@ -531,7 +520,7 @@ const DOMAINS: Domain[] = [
       },
       {
         name: "Jasmitha P",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadcreatives.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/jasmithap1474/",
@@ -540,7 +529,7 @@ const DOMAINS: Domain[] = [
       },
       {
         name: "Richelle Ranjan",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadcreatives3.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/richelle-ranjan-b38760356/",
@@ -556,7 +545,7 @@ const DOMAINS: Domain[] = [
     row1: [
       {
         name: "Ayush Joshi",
-        role: "Lead",
+        role: "Head",
         image: "/Team/leadevents.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/ayush-joshi-7337b9317/",
@@ -567,7 +556,7 @@ const DOMAINS: Domain[] = [
     row2: [
       {
         name: "Shabdika Mishra",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadevents1.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/shabdikamishra/",
@@ -576,7 +565,7 @@ const DOMAINS: Domain[] = [
       },
       {
         name: "Svar Kalavadia",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "/Team/coleadevents.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/svarkalavadia/",
@@ -929,8 +918,6 @@ export default function TeamsPage() {
             {/* 1-col mobile → 2-col sm → 3-col md */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-20 gap-x-4 justify-items-center max-w-5xl mx-auto">
               {STUDENT_CORE.map((member, idx) => {
-                const isLast = idx === STUDENT_CORE.length - 1;
-
                 return (
                   <motion.div
                     key={member.name}
@@ -944,9 +931,6 @@ export default function TeamsPage() {
                       stiffness: 80,
                       damping: 18,
                     }}
-                    className={`
-        ${isLast ? "md:col-span-3 flex justify-center" : ""}
-      `}
                   >
                     <IdCard {...member} />
                   </motion.div>

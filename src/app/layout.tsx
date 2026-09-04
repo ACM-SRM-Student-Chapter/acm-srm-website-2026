@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import CustomCursor from "@/components/ui/CustomCursor";
 import Footer from "@/components/ui/Footer";
+import LatestTechGoshipsPopup from "@/components/ui/LatestTechGoshipsPopup";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -74,6 +75,7 @@ export default function RootLayout({
         className={`${inter.className} antialiased selection:bg-acm-electric selection:text-black overflow-x-hidden`}
       >
         <CustomCursor />
+        <LatestTechGoshipsPopup />
         <Navbar />
 
         {/* Main Content */}
