@@ -71,8 +71,8 @@ export default function TechGoshipsSection() {
 
               {/* Content */}
               <div className="p-8 md:p-12 w-full md:w-1/2 flex flex-col justify-center bg-white">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-acm-electric/10 px-4 py-1.5 text-sm font-bold text-acm-electric border border-acm-electric/20 w-fit">
-                  <CheckCircle className="h-4 w-4" /> Registration Open
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-black/10 px-4 py-1.5 text-sm font-bold text-black/60 border border-black/20 w-fit">
+                  <CheckCircle className="h-4 w-4" /> Registration Closed
                 </div>
 
                 <h3 className={`text-3xl md:text-4xl uppercase tracking-wide text-black mb-2 ${anton.className}`}>
@@ -111,14 +111,12 @@ export default function TechGoshipsSection() {
                   </div>
                 </div>
 
-                <a
-                  href={event.registrationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-block text-center rounded-xl bg-[#111315] hover:bg-acm-electric hover:text-black hover:shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all duration-300 text-white font-bold uppercase tracking-wider py-4 px-8 ${anton.className} text-xl w-full sm:w-auto`}
+                <button
+                  disabled
+                  className={`inline-block text-center rounded-xl bg-[#111315]/50 cursor-not-allowed text-white/50 font-bold uppercase tracking-wider py-4 px-8 ${anton.className} text-xl w-full sm:w-auto`}
                 >
                   Register Now
-                </a>
+                </button>
               </div>
             </div>
           ))}

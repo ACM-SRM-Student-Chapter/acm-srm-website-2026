@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/ui/Navbar";
 import CustomCursor from "@/components/ui/CustomCursor";
 import Footer from "@/components/ui/Footer";
-import LatestTechGoshipsPopup from "@/components/ui/LatestTechGoshipsPopup";
+// import LatestTechGoshipsPopup from "@/components/ui/LatestTechGoshipsPopup";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -70,12 +70,14 @@ export default function RootLayout({
       lang="en"
       className={cn("font-sans", geist.variable)}
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body
         className={`${inter.className} antialiased selection:bg-acm-electric selection:text-black overflow-x-hidden`}
+        suppressHydrationWarning
       >
         <CustomCursor />
-        <LatestTechGoshipsPopup />
+        {/* <LatestTechGoshipsPopup /> */}
         <Navbar />
 
         {/* Main Content */}

@@ -43,46 +43,124 @@ const recruitmentSchema = z
       .min(10, "Valid WhatsApp number is required")
       .regex(/^[0-9+\-\s()]*$/, "Numbers only"),
     academicYear: z.string().min(1, "Please select your year"),
-    domain: z.string().min(1, "Please select a domain"),
-    division: z.string().optional(),
+    domain: z.string().min(1, "Please select your 1st preference"),
+    secondPreference: z.string().optional(),
     proficiency: z.string().min(1, "Please select your proficiency"),
+
+    // New General Questions
+    traits: z.string().min(10, "Please provide 3 traits"),
+    commitment: z.string().min(10, "Please describe your commitment"),
+    pastExperience: z.string().min(2, "Please share your experience (or NA)"),
+    expectations: z.string().min(10, "Please share your expectations"),
     motivation: z
       .string()
       .min(20, "Please write at least 20 characters")
       .max(500, "Maximum 500 characters allowed"),
-    github: z.string().url("Must be a valid URL (https://github.com/...)"),
+
+    // Links
+    github: z
+      .string()
+      .url("Must be a valid URL (https://github.com/...)")
+      .or(z.literal("")),
     linkedin: z
       .string()
       .url("Must be a valid URL (https://linkedin.com/in/...)"),
-    resumeLink: z
+    instagram: z
       .string()
-      .url("Must be a valid public URL (Google Drive, etc.)"),
+      .url("Must be a valid URL")
+      .or(z.literal(""))
+      .optional(),
+    resumeLink: z.string().url("Must be a valid public URL"),
     queries: z.string().optional(),
+
+    // Conditional Canvas Fields
+    canvasReason: z.string().optional(),
+    canvasSoftware: z.string().optional(),
+    portfolioLink: z.string().optional(),
+
+    // Conditional Foundry Fields
+    division: z.string().optional(),
+    foundryProjects: z.string().optional(),
+    foundryTechStack: z.string().optional(),
+    foundryAITools: z.string().optional(),
   })
-  .refine(
-    (data) => {
-      // If they chose Technical, they MUST choose a division
-      if (
-        data.domain.includes("FOUNDRY") &&
-        (!data.division || data.division.trim() === "")
-      ) {
-        return false;
+  .superRefine((data, ctx) => {
+    // Check if FOUNDRY is selected in either preference
+    const isFoundry =
+      data.domain.includes("FOUNDRY") ||
+      (data.secondPreference && data.secondPreference.includes("FOUNDRY"));
+    // Check if CANVAS is selected in either preference
+    const isCanvas =
+      data.domain.includes("CANVAS") ||
+      (data.secondPreference && data.secondPreference.includes("CANVAS"));
+
+    if (isFoundry) {
+      if (!data.division)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Division is required for Technical domain",
+          path: ["division"],
+        });
+      if (!data.foundryProjects || data.foundryProjects.length < 5)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please provide project links",
+          path: ["foundryProjects"],
+        });
+      if (!data.foundryTechStack || data.foundryTechStack.length < 2)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please list your tech stack",
+          path: ["foundryTechStack"],
+        });
+      if (!data.foundryAITools || data.foundryAITools.length < 2)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please list AI tools you use",
+          path: ["foundryAITools"],
+        });
+    }
+
+    if (isCanvas) {
+      if (!data.canvasReason || data.canvasReason.length < 10)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please tell us why you want to join Canvas",
+          path: ["canvasReason"],
+        });
+      if (!data.canvasSoftware || data.canvasSoftware.length < 2)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please list software/tools",
+          path: ["canvasSoftware"],
+        });
+      if (!data.portfolioLink)
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Portfolio link is required for Canvas",
+          path: ["portfolioLink"],
+        });
+      else {
+        try {
+          new URL(data.portfolioLink);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Must be a valid URL",
+            path: ["portfolioLink"],
+          });
+        }
       }
-      return true;
-    },
-    {
-      message: "Please select a division for the Technical domain",
-      path: ["division"],
-    },
-  );
+    }
+  });
 
 type RecruitmentFormValues = z.infer<typeof recruitmentSchema>;
 
 export default function JoinUsPage() {
-  // ==========================================
-  // TOGGLE THIS TRUE/FALSE TO OPEN/CLOSE RECRUITMENTS
-  // ==========================================
-  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(false);
+  // =========================================================================
+  // 🟢 TOGGLE THIS TO OPEN OR CLOSE RECRUITMENTS (true = open, false = closed)
+  // =========================================================================
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
 
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
@@ -99,12 +177,20 @@ export default function JoinUsPage() {
     defaultValues: {
       academicYear: "",
       domain: "",
+      secondPreference: "",
       division: "",
       proficiency: "",
     },
   });
 
-  const selectedDomain = watch("domain");
+  const selectedDomain1 = watch("domain");
+  const selectedDomain2 = watch("secondPreference");
+
+  const isFoundrySelected =
+    selectedDomain1?.includes("FOUNDRY") ||
+    selectedDomain2?.includes("FOUNDRY");
+  const isCanvasSelected =
+    selectedDomain1?.includes("CANVAS") || selectedDomain2?.includes("CANVAS");
 
   const fireConfetti = () => {
     const end = Date.now() + 3 * 1000;
@@ -125,10 +211,7 @@ export default function JoinUsPage() {
         origin: { x: 1 },
         colors: colors,
       });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      if (Date.now() < end) requestAnimationFrame(frame);
     })();
   };
 
@@ -136,24 +219,18 @@ export default function JoinUsPage() {
     setStatus("submitting");
 
     try {
-      // Fetching the URL securely from the .env.local file
       const GOOGLE_SCRIPT_URL = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
-
-      if (!GOOGLE_SCRIPT_URL) {
-        throw new Error("Google Script URL is missing in .env.local");
-      }
+      if (!GOOGLE_SCRIPT_URL) throw new Error("Google Script URL is missing");
 
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       setStatus("success");
-      fireConfetti(); // Trigger the rain!
+      fireConfetti();
       reset();
     } catch (error) {
       console.error("Submission Error:", error);
@@ -166,24 +243,18 @@ export default function JoinUsPage() {
     <div
       className={`relative flex min-h-screen flex-col items-center justify-center p-4 pt-24 pb-24 bg-[#ffffff] overflow-hidden ${inter.className}`}
     >
-      {/* Architectural Grey Matrix/Grid Background */}
+      {/* Background Styling */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
-          `,
+          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
         }}
       />
-
-      {/* Light-up color glows behind the background */}
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-acm-electric/10 rounded-full blur-[120px] pointer-events-none z-0" />
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-acm-pink/5 rounded-full blur-[120px] pointer-events-none z-0" />
       <div className="absolute bottom-1/4 left-1/3 w-[700px] h-[700px] bg-acm-violet/10 rounded-full blur-[150px] pointer-events-none z-0" />
 
-      {/* --- RECRUITMENT CLOSED UI --- */}
       <AnimatePresence mode="wait">
         {!isRecruitmentOpen && (
           <motion.div
@@ -202,11 +273,9 @@ export default function JoinUsPage() {
                 </span>
                 RECRUITMENTS CLOSED
               </div>
-
               <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-100 text-gray-500 shadow-inner">
                 <Lock className="h-10 w-10 opacity-80" />
               </div>
-
               <h1
                 className={`mb-4 text-4xl md:text-5xl uppercase tracking-wide text-[#111315] ${anton.className}`}
               >
@@ -215,7 +284,6 @@ export default function JoinUsPage() {
                   Interest
                 </span>
               </h1>
-
               <p
                 className={`mb-10 max-w-lg text-lg text-black/60 leading-relaxed italic ${playfair.className}`}
               >
@@ -227,7 +295,6 @@ export default function JoinUsPage() {
                 Stay tuned for future opportunities, workshops, and open events
                 by following our social media channels.
               </p>
-
               <div className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
                 <a
                   href="https://www.instagram.com/srm.acm/"
@@ -241,27 +308,17 @@ export default function JoinUsPage() {
                     Follow on Instagram
                   </span>
                 </a>
-
                 <Link
                   href="/"
                   className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-gray-50 px-8 py-4 font-bold text-[#111315] transition-colors hover:bg-gray-100 hover:text-acm-blue sm:w-auto active:scale-95 transition-transform"
                 >
-                  <ArrowLeft className="h-5 w-5" />
-                  Back to Home
+                  <ArrowLeft className="h-5 w-5" /> Back to Home
                 </Link>
-              </div>
-
-              <div className="mt-12 flex items-center gap-2 text-sm font-medium text-black/40">
-                <Mail className="h-4 w-4" />
-                <span>
-                  Have an urgent inquiry? Reach out via our social channels.
-                </span>
               </div>
             </div>
           </motion.div>
         )}
 
-        {/* --- RECRUITMENT OPEN UI (THE FORM) --- */}
         {isRecruitmentOpen && (
           <motion.div
             key="open"
@@ -334,7 +391,6 @@ export default function JoinUsPage() {
                   >
                     1. Personal Details
                   </h3>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
@@ -343,7 +399,7 @@ export default function JoinUsPage() {
                       <input
                         {...register("fullName")}
                         className={`w-full bg-[#F8F7F4] border ${errors.fullName ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="Pius"
+                        placeholder="John Doe"
                       />
                       {errors.fullName && (
                         <p className="text-red-500 text-xs font-bold pl-2">
@@ -453,83 +509,251 @@ export default function JoinUsPage() {
                     2. Role Preferences
                   </h3>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Interested Domain/Team{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      {...register("domain")}
-                      className={`w-full bg-[#F8F7F4] border ${errors.domain ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
-                    >
-                      <option value="" disabled>
-                        Select a Domain...
-                      </option>
-                      <option value="FOUNDRY (Technical)">
-                        FOUNDRY (Technical)
-                      </option>
-                      <option value="AMPLIFIER (PR & Outreach)">
-                        AMPLIFIER (PR & Outreach)
-                      </option>
-                      <option value="ELEVATORS (Sponsorship & Finance)">
-                        ELEVATORS (Sponsorship & Finance)
-                      </option>
-                      <option value="CANVAS (Media, Creatives & Photo/Video)">
-                        CANVAS (Media, Creatives & Photo/Video)
-                      </option>
-                      <option value="ORCHESTRATORS (Corporate & Events)">
-                        ORCHESTRATORS (Corporate & Events)
-                      </option>
-                    </select>
-                    {errors.domain && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.domain.message}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        1st Preference (Domain){" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        {...register("domain")}
+                        className={`w-full bg-[#F8F7F4] border ${errors.domain ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
+                      >
+                        <option value="" disabled>
+                          Select 1st Preference...
+                        </option>
+                        <option value="FOUNDRY (Technical)">
+                          FOUNDRY (Technical)
+                        </option>
+                        <option value="AMPLIFIER (PR & Outreach)">
+                          AMPLIFIER (PR & Outreach)
+                        </option>
+                        <option value="ELEVATORS (Sponsorship & Finance)">
+                          ELEVATORS (Sponsorship & Finance)
+                        </option>
+                        <option value="CANVAS (Media, Creatives & Photo/Video)">
+                          CANVAS (Media, Creatives & Photo/Video)
+                        </option>
+                        <option value="ORCHESTRATORS (Corporate & Events)">
+                          ORCHESTRATORS (Corporate & Events)
+                        </option>
+                      </select>
+                      {errors.domain && (
+                        <p className="text-red-500 text-xs font-bold pl-2">
+                          {errors.domain.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        2nd Preference (Domain)
+                      </label>
+                      <select
+                        {...register("secondPreference")}
+                        className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer"
+                      >
+                        <option value="" disabled>
+                          Select 2nd Preference...
+                        </option>
+                        <option value="None">
+                          None (Only interested in 1st choice)
+                        </option>
+                        <option value="FOUNDRY (Technical)">
+                          FOUNDRY (Technical)
+                        </option>
+                        <option value="AMPLIFIER (PR & Outreach)">
+                          AMPLIFIER (PR & Outreach)
+                        </option>
+                        <option value="ELEVATORS (Sponsorship & Finance)">
+                          ELEVATORS (Sponsorship & Finance)
+                        </option>
+                        <option value="CANVAS (Media, Creatives & Photo/Video)">
+                          CANVAS (Media, Creatives & Photo/Video)
+                        </option>
+                        <option value="ORCHESTRATORS (Corporate & Events)">
+                          ORCHESTRATORS (Corporate & Events)
+                        </option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Conditional Technical Division Dropdown */}
                   <AnimatePresence>
-                    {selectedDomain === "FOUNDRY (Technical)" && (
+                    {isFoundrySelected && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0, y: -10 }}
-                        animate={{ opacity: 1, height: "auto", y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -10 }}
-                        className="space-y-2"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4 pt-4 border-t border-acm-electric/10 overflow-hidden"
                       >
-                        <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
-                          Technical Division{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          {...register("division")}
-                          className={`w-full bg-acm-electric/5 border ${errors.division ? "border-red-500" : "border-acm-electric/30"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 transition-all cursor-pointer`}
-                        >
-                          <option value="" disabled>
-                            Select Division...
-                          </option>
-                          <option value="Competitive Programming (DSA)">
-                            1. Competitive Programming (DSA)
-                          </option>
-                          <option value="Full Stack + Cloud & DevOps">
-                            2. Full Stack + Cloud & DevOps
-                          </option>
-                          <option value="AI/ML + MLOps">
-                            3. AI/ML + MLOps
-                          </option>
-                        </select>
-                        {errors.division && (
-                          <p className="text-red-500 text-xs font-bold pl-2">
-                            {errors.division.message}
-                          </p>
-                        )}
+                        <div className="bg-acm-electric/5 rounded-2xl p-6 border border-acm-electric/20 space-y-6">
+                          <h4 className="text-acm-electric font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-acm-electric animate-pulse"></span>{" "}
+                            Foundry Specific Questions
+                          </h4>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                              Technical Division{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                              {...register("division")}
+                              className={`w-full bg-white border ${errors.division ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 cursor-pointer`}
+                            >
+                              <option value="" disabled>
+                                Select Division...
+                              </option>
+                              <option value="Competitive Programming (DSA)">
+                                Competitive Programming (DSA)
+                              </option>
+                              <option value="Full Stack + Cloud & DevOps">
+                                Full Stack + Cloud & DevOps
+                              </option>
+                              <option value="AI/ML + MLOps">
+                                AI/ML + MLOps
+                              </option>
+                            </select>
+                            {errors.division && (
+                              <p className="text-red-500 text-xs font-bold pl-2">
+                                {errors.division.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                              Best 2 Projects (GitHub Links){" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              {...register("foundryProjects")}
+                              rows={2}
+                              className={`w-full bg-white border ${errors.foundryProjects ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 resize-none`}
+                              placeholder="Paste your 2 best project links here..."
+                            />
+                            {errors.foundryProjects && (
+                              <p className="text-red-500 text-xs font-bold pl-2">
+                                {errors.foundryProjects.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                                Tech Stacks / Languages{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                {...register("foundryTechStack")}
+                                className={`w-full bg-white border ${errors.foundryTechStack ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
+                                placeholder="React, Node, Python, C++..."
+                              />
+                              {errors.foundryTechStack && (
+                                <p className="text-red-500 text-xs font-bold pl-2">
+                                  {errors.foundryTechStack.message}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                                AI Tools Used Daily{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                {...register("foundryAITools")}
+                                className={`w-full bg-white border ${errors.foundryAITools ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
+                                placeholder="ChatGPT, Copilot, Cursor..."
+                              />
+                              {errors.foundryAITools && (
+                                <p className="text-red-500 text-xs font-bold pl-2">
+                                  {errors.foundryAITools.message}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Conditional Canvas Questions */}
+                  <AnimatePresence>
+                    {isCanvasSelected && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4 pt-4 border-t border-acm-pink/10 overflow-hidden"
+                      >
+                        <div className="bg-acm-pink/5 rounded-2xl p-6 border border-acm-pink/20 space-y-6">
+                          <h4 className="text-acm-pink font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-acm-pink animate-pulse"></span>{" "}
+                            Canvas Specific Questions
+                          </h4>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                              Why do you want to join Canvas in particular?{" "}
+                              <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              {...register("canvasReason")}
+                              rows={2}
+                              className={`w-full bg-white border ${errors.canvasReason ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink focus:ring-2 focus:ring-acm-pink/20 resize-none`}
+                              placeholder="Your creative motivation..."
+                            />
+                            {errors.canvasReason && (
+                              <p className="text-red-500 text-xs font-bold pl-2">
+                                {errors.canvasReason.message}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                                Software/Tools Known{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                {...register("canvasSoftware")}
+                                className={`w-full bg-white border ${errors.canvasSoftware ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
+                                placeholder="Figma, Premiere Pro, After Effects..."
+                              />
+                              {errors.canvasSoftware && (
+                                <p className="text-red-500 text-xs font-bold pl-2">
+                                  {errors.canvasSoftware.message}
+                                </p>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                                Drive Link of Previous Work{" "}
+                                <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                {...register("portfolioLink")}
+                                className={`w-full bg-white border ${errors.portfolioLink ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
+                                placeholder="Ensure access is 'Anyone with link'"
+                              />
+                              {errors.portfolioLink && (
+                                <p className="text-red-500 text-xs font-bold pl-2">
+                                  {errors.portfolioLink.message}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Rate your proficiency in this domain{" "}
+                      Rate your overall proficiency{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -562,16 +786,89 @@ export default function JoinUsPage() {
                     )}
                   </div>
 
+                  {/* General Questionnaire */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        Define 3 traits why we should recruit you{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        {...register("traits")}
+                        className={`w-full bg-[#F8F7F4] border ${errors.traits ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+                        placeholder="E.g., Hardworking, Creative, Leader"
+                      />
+                      {errors.traits && (
+                        <p className="text-red-500 text-xs font-bold pl-2">
+                          {errors.traits.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        Previous Club Experience{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        {...register("pastExperience")}
+                        className={`w-full bg-[#F8F7F4] border ${errors.pastExperience ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+                        placeholder="Club Name, Position, Domain (or NA)"
+                      />
+                      {errors.pastExperience && (
+                        <p className="text-red-500 text-xs font-bold pl-2">
+                          {errors.pastExperience.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Why do you want to join ACM SRMIST?{" "}
+                      How would you describe your commitment towards a club?{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      {...register("commitment")}
+                      rows={2}
+                      className={`w-full bg-[#F8F7F4] border ${errors.commitment ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+                      placeholder="How much time/effort can you give?"
+                    />
+                    {errors.commitment && (
+                      <p className="text-red-500 text-xs font-bold pl-2">
+                        {errors.commitment.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                      What are your expectations from ACM?{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      {...register("expectations")}
+                      rows={2}
+                      className={`w-full bg-[#F8F7F4] border ${errors.expectations ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+                      placeholder="What do you hope to learn or achieve?"
+                    />
+                    {errors.expectations && (
+                      <p className="text-red-500 text-xs font-bold pl-2">
+                        {errors.expectations.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                      Why do you want to join ACM SRMIST overall?{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       {...register("motivation")}
-                      rows={4}
-                      className={`w-full bg-[#F8F7F4] border ${errors.motivation ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all resize-none`}
-                      placeholder="Tell us what motivates you..."
+                      rows={3}
+                      className={`w-full bg-[#F8F7F4] border ${errors.motivation ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+                      placeholder="Tell us your motivation..."
                     />
                     {errors.motivation && (
                       <p className="text-red-500 text-xs font-bold pl-2">
@@ -592,12 +889,11 @@ export default function JoinUsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        GitHub Profile URL{" "}
-                        <span className="text-red-500">*</span>
+                        GitHub Profile URL
                       </label>
                       <input
                         {...register("github")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.github ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+                        className={`w-full bg-[#F8F7F4] border ${errors.github ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
                         placeholder="https://github.com/username"
                       />
                       {errors.github && (
@@ -614,7 +910,7 @@ export default function JoinUsPage() {
                       </label>
                       <input
                         {...register("linkedin")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.linkedin ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+                        className={`w-full bg-[#F8F7F4] border ${errors.linkedin ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
                         placeholder="https://linkedin.com/in/username"
                       />
                       {errors.linkedin && (
@@ -625,21 +921,39 @@ export default function JoinUsPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Link to Resume/CV (Google Drive, PDF, etc.){" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      {...register("resumeLink")}
-                      className={`w-full bg-[#F8F7F4] border ${errors.resumeLink ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                      placeholder="Ensure link access is set to 'Anyone with the link'"
-                    />
-                    {errors.resumeLink && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.resumeLink.message}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        Link to Resume/CV{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        {...register("resumeLink")}
+                        className={`w-full bg-[#F8F7F4] border ${errors.resumeLink ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+                        placeholder="Ensure access is 'Anyone with link'"
+                      />
+                      {errors.resumeLink && (
+                        <p className="text-red-500 text-xs font-bold pl-2">
+                          {errors.resumeLink.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+                        Instagram URL
+                      </label>
+                      <input
+                        {...register("instagram")}
+                        className={`w-full bg-[#F8F7F4] border ${errors.instagram ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+                        placeholder="https://instagram.com/username"
+                      />
+                      {errors.instagram && (
+                        <p className="text-red-500 text-xs font-bold pl-2">
+                          {errors.instagram.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -649,7 +963,7 @@ export default function JoinUsPage() {
                     <textarea
                       {...register("queries")}
                       rows={2}
-                      className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all resize-none"
+                      className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none"
                       placeholder="Optional..."
                     />
                   </div>

@@ -428,12 +428,12 @@ const DOMAINS: Domain[] = [
     color: "violet",
     row1: [
       {
-        name: "Krishansh Verma",
+        name: "announcing soon...",
         role: "Lead",
-        image: "/Team/leadpr.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/krishansh-verma-787967215/",
-          instagram: "https://www.instagram.com/krishansh_031/",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
@@ -448,12 +448,12 @@ const DOMAINS: Domain[] = [
         },
       },
       {
-        name: "Ipshita Sharma",
+        name: "announcing soon...",
         role: "Co-lead",
-        image: "/Team/coleadpr.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/ipshita-sharma-2a2984327",
-          instagram: "https://www.instagram.com/ipshita_sharmaa/",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
@@ -564,12 +564,12 @@ const DOMAINS: Domain[] = [
         },
       },
       {
-        name: "Svar Kalavadia",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadevents.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/svarkalavadia/",
-          instagram: "https://www.instagram.com/svarkalavadia20/",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],

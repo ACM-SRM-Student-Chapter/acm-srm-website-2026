@@ -58,6 +58,7 @@ export default function Navbar() {
               width={36}
               height={36}
               className="object-contain"
+              priority
             />
             <Image
               src="/srm-logo.webp"
@@ -66,6 +67,7 @@ export default function Navbar() {
               height={82}
               className="h-8 w-auto sm:h-10 object-contain"
               style={{ width: "auto", height: "auto" }}
+              priority
             />
           </Link>
 
