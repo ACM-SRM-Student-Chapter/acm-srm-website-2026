@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Playfair_Display, Anton, Inter } from "next/font/google";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import confetti from "canvas-confetti";
@@ -47,17 +47,15 @@ const recruitmentSchema = z
     secondPreference: z.string().optional(),
     proficiency: z.string().min(1, "Please select your proficiency"),
 
-    // New General Questions
-    traits: z.string().min(10, "Please provide 3 traits"),
-    commitment: z.string().min(10, "Please describe your commitment"),
+    traits: z.string().optional(),
+    commitment: z.string().optional(),
     pastExperience: z.string().min(2, "Please share your experience (or NA)"),
-    expectations: z.string().min(10, "Please share your expectations"),
+    expectations: z.string().optional(),
     motivation: z
       .string()
       .min(20, "Please write at least 20 characters")
       .max(500, "Maximum 500 characters allowed"),
 
-    // Links
     github: z
       .string()
       .url("Must be a valid URL (https://github.com/...)")
@@ -70,26 +68,26 @@ const recruitmentSchema = z
       .url("Must be a valid URL")
       .or(z.literal(""))
       .optional(),
-    resumeLink: z.string().url("Must be a valid public URL"),
+    resumeLink: z
+      .string()
+      .url("Must be a valid public URL")
+      .or(z.literal(""))
+      .optional(),
     queries: z.string().optional(),
 
-    // Conditional Canvas Fields
     canvasReason: z.string().optional(),
     canvasSoftware: z.string().optional(),
     portfolioLink: z.string().optional(),
 
-    // Conditional Foundry Fields
     division: z.string().optional(),
     foundryProjects: z.string().optional(),
     foundryTechStack: z.string().optional(),
     foundryAITools: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    // Check if FOUNDRY is selected in either preference
     const isFoundry =
       data.domain.includes("FOUNDRY") ||
       (data.secondPreference && data.secondPreference.includes("FOUNDRY"));
-    // Check if CANVAS is selected in either preference
     const isCanvas =
       data.domain.includes("CANVAS") ||
       (data.secondPreference && data.secondPreference.includes("CANVAS"));
@@ -122,12 +120,6 @@ const recruitmentSchema = z
     }
 
     if (isCanvas) {
-      if (!data.canvasReason || data.canvasReason.length < 10)
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Please tell us why you want to join Canvas",
-          path: ["canvasReason"],
-        });
       if (!data.canvasSoftware || data.canvasSoftware.length < 2)
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -156,32 +148,136 @@ const recruitmentSchema = z
 
 type RecruitmentFormValues = z.infer<typeof recruitmentSchema>;
 
-export default function JoinUsPage() {
-  // =========================================================================
-  // 🟢 TOGGLE THIS TO OPEN OR CLOSE RECRUITMENTS (true = open, false = closed)
-  // =========================================================================
-  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
-
-  const [status, setStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
-
+// =========================================================================
+// SUB-COMPONENT: 1. Personal Info
+// =========================================================================
+function PersonalInfoSection() {
   const {
     register,
-    handleSubmit,
-    watch,
-    reset,
     formState: { errors },
-  } = useForm<RecruitmentFormValues>({
-    resolver: zodResolver(recruitmentSchema),
-    defaultValues: {
-      academicYear: "",
-      domain: "",
-      secondPreference: "",
-      division: "",
-      proficiency: "",
-    },
-  });
+  } = useFormContext<RecruitmentFormValues>();
+
+  return (
+    <div className="space-y-6">
+      <h3
+        className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 ${anton.className}`}
+      >
+        1. Personal Details
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("fullName")}
+            className={`w-full bg-[#F8F7F4] border ${errors.fullName ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+            placeholder="John Doe"
+          />
+          {errors.fullName && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.fullName.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            SRM Registration Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("regNumber")}
+            className={`w-full bg-[#F8F7F4] border ${errors.regNumber ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] uppercase outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+            placeholder="RA241100301024"
+          />
+          {errors.regNumber && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.regNumber.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Personal Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("personalEmail")}
+            type="email"
+            className={`w-full bg-[#F8F7F4] border ${errors.personalEmail ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+            placeholder="pius@gmail.com"
+          />
+          {errors.personalEmail && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.personalEmail.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            College Email <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("collegeEmail")}
+            type="email"
+            className={`w-full bg-[#F8F7F4] border ${errors.collegeEmail ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+            placeholder="jd1234@srmist.edu.in"
+          />
+          {errors.collegeEmail && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.collegeEmail.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Contact Number (WhatsApp) <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("contactNumber")}
+            type="tel"
+            className={`w-full bg-[#F8F7F4] border ${errors.contactNumber ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
+            placeholder="+91 9876543210"
+          />
+          {errors.contactNumber && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.contactNumber.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Year of Study <span className="text-red-500">*</span>
+          </label>
+          <select
+            {...register("academicYear")}
+            className={`w-full bg-[#F8F7F4] border ${errors.academicYear ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
+          >
+            <option value="" disabled>
+              Select Year...
+            </option>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+          </select>
+          {errors.academicYear && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.academicYear.message}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// SUB-COMPONENT: 2. Role Preferences
+// =========================================================================
+function RolePreferencesSection() {
+  const {
+    register,
+    formState: { errors },
+    watch,
+  } = useFormContext<RecruitmentFormValues>();
 
   const selectedDomain1 = watch("domain");
   const selectedDomain2 = watch("secondPreference");
@@ -192,10 +288,470 @@ export default function JoinUsPage() {
   const isCanvasSelected =
     selectedDomain1?.includes("CANVAS") || selectedDomain2?.includes("CANVAS");
 
+  return (
+    <div className="space-y-6">
+      <h3
+        className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 mt-8 ${anton.className}`}
+      >
+        2. Role Preferences
+      </h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            1st Preference (Domain) <span className="text-red-500">*</span>
+          </label>
+          <select
+            {...register("domain")}
+            className={`w-full bg-[#F8F7F4] border ${errors.domain ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
+          >
+            <option value="" disabled>
+              Select 1st Preference...
+            </option>
+            <option value="FOUNDRY (Technical)">FOUNDRY (Technical)</option>
+            <option value="AMPLIFIER (PR & Outreach)">
+              AMPLIFIER (PR & Outreach)
+            </option>
+            <option value="ELEVATORS (Sponsorship & Finance)">
+              ELEVATORS (Sponsorship & Finance)
+            </option>
+            <option value="CANVAS (Media, Creatives & Photo/Video)">
+              CANVAS (Media, Creatives & Photo/Video)
+            </option>
+            <option value="ORCHESTRATORS (Corporate & Events)">
+              ORCHESTRATORS (Corporate & Events)
+            </option>
+          </select>
+          {errors.domain && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.domain.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            2nd Preference (Domain)
+          </label>
+          <select
+            {...register("secondPreference")}
+            className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer"
+          >
+            <option value="" disabled>
+              Select 2nd Preference...
+            </option>
+            <option value="None">None (Only interested in 1st choice)</option>
+            <option value="FOUNDRY (Technical)">FOUNDRY (Technical)</option>
+            <option value="AMPLIFIER (PR & Outreach)">
+              AMPLIFIER (PR & Outreach)
+            </option>
+            <option value="ELEVATORS (Sponsorship & Finance)">
+              ELEVATORS (Sponsorship & Finance)
+            </option>
+            <option value="CANVAS (Media, Creatives & Photo/Video)">
+              CANVAS (Media, Creatives & Photo/Video)
+            </option>
+            <option value="ORCHESTRATORS (Corporate & Events)">
+              ORCHESTRATORS (Corporate & Events)
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isFoundrySelected && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-4 pt-4 border-t border-acm-electric/10 overflow-hidden"
+          >
+            <div className="bg-acm-electric/5 rounded-2xl p-6 border border-acm-electric/20 space-y-6">
+              <h4 className="text-acm-electric font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-acm-electric animate-pulse"></span>{" "}
+                Foundry Specific Questions
+              </h4>
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                  Technical Division <span className="text-red-500">*</span>
+                </label>
+                <select
+                  {...register("division")}
+                  className={`w-full bg-white border ${errors.division ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 cursor-pointer`}
+                >
+                  <option value="" disabled>
+                    Select Division...
+                  </option>
+                  <option value="Competitive Programming (DSA)">
+                    Competitive Programming (DSA)
+                  </option>
+                  <option value="Full Stack + Cloud & DevOps">
+                    Full Stack + Cloud & DevOps
+                  </option>
+                  <option value="AI/ML + MLOps">AI/ML + MLOps</option>
+                </select>
+                {errors.division && (
+                  <p className="text-red-500 text-xs font-bold pl-2">
+                    {errors.division.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                  Best 2 Projects (GitHub Links){" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  {...register("foundryProjects")}
+                  rows={2}
+                  className={`w-full bg-white border ${errors.foundryProjects ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric resize-none`}
+                  placeholder="Paste your 2 best project links here..."
+                />
+                {errors.foundryProjects && (
+                  <p className="text-red-500 text-xs font-bold pl-2">
+                    {errors.foundryProjects.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                    Tech Stacks / Languages{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register("foundryTechStack")}
+                    className={`w-full bg-white border ${errors.foundryTechStack ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
+                    placeholder="React, Node, Python, C++..."
+                  />
+                  {errors.foundryTechStack && (
+                    <p className="text-red-500 text-xs font-bold pl-2">
+                      {errors.foundryTechStack.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
+                    AI Tools Used Daily <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register("foundryAITools")}
+                    className={`w-full bg-white border ${errors.foundryAITools ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
+                    placeholder="ChatGPT, Copilot, Cursor..."
+                  />
+                  {errors.foundryAITools && (
+                    <p className="text-red-500 text-xs font-bold pl-2">
+                      {errors.foundryAITools.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isCanvasSelected && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-4 pt-4 border-t border-acm-pink/10 overflow-hidden"
+          >
+            <div className="bg-acm-pink/5 rounded-2xl p-6 border border-acm-pink/20 space-y-6">
+              <h4 className="text-acm-pink font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-acm-pink animate-pulse"></span>{" "}
+                Canvas Specific Questions
+              </h4>
+              <div className="space-y-2">
+                <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                  Why do you want to join Canvas in particular?
+                </label>
+                <textarea
+                  {...register("canvasReason")}
+                  rows={2}
+                  className={`w-full bg-white border ${errors.canvasReason ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink resize-none`}
+                  placeholder="Your creative motivation..."
+                />
+                {errors.canvasReason && (
+                  <p className="text-red-500 text-xs font-bold pl-2">
+                    {errors.canvasReason.message}
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                    Software/Tools Known <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register("canvasSoftware")}
+                    className={`w-full bg-white border ${errors.canvasSoftware ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
+                    placeholder="Figma, Premiere Pro, After Effects..."
+                  />
+                  {errors.canvasSoftware && (
+                    <p className="text-red-500 text-xs font-bold pl-2">
+                      {errors.canvasSoftware.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
+                    Drive Link of Previous Work{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    {...register("portfolioLink")}
+                    className={`w-full bg-white border ${errors.portfolioLink ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
+                    placeholder="Ensure access is 'Anyone with link'"
+                  />
+                  {errors.portfolioLink && (
+                    <p className="text-red-500 text-xs font-bold pl-2">
+                      {errors.portfolioLink.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+          Rate your overall proficiency <span className="text-red-500">*</span>
+        </label>
+        <select
+          {...register("proficiency")}
+          className={`w-full bg-[#F8F7F4] border ${errors.proficiency ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
+        >
+          <option value="" disabled>
+            Select Level...
+          </option>
+          <option value="1 - Beginner">1 - Beginner (Just starting out)</option>
+          <option value="2 - Novice">2 - Novice (Basic understanding)</option>
+          <option value="3 - Intermediate">
+            3 - Intermediate (Can build/work independently)
+          </option>
+          <option value="4 - Advanced">
+            4 - Advanced (Strong portfolio/experience)
+          </option>
+          <option value="5 - Expert">
+            5 - Expert (Ready to lead and mentor)
+          </option>
+        </select>
+        {errors.proficiency && (
+          <p className="text-red-500 text-xs font-bold pl-2">
+            {errors.proficiency.message}
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Define 3 traits why we should recruit you
+          </label>
+          <input
+            {...register("traits")}
+            className={`w-full bg-[#F8F7F4] border ${errors.traits ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="E.g., Hardworking, Creative, Leader"
+          />
+          {errors.traits && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.traits.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Previous Club Experience <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("pastExperience")}
+            className={`w-full bg-[#F8F7F4] border ${errors.pastExperience ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="Club Name, Position, Domain (or NA)"
+          />
+          {errors.pastExperience && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.pastExperience.message}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+          How would you describe your commitment towards a club?
+        </label>
+        <textarea
+          {...register("commitment")}
+          rows={2}
+          className={`w-full bg-[#F8F7F4] border ${errors.commitment ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+          placeholder="How much time/effort can you give?"
+        />
+        {errors.commitment && (
+          <p className="text-red-500 text-xs font-bold pl-2">
+            {errors.commitment.message}
+          </p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+          What are your expectations from ACM?
+        </label>
+        <textarea
+          {...register("expectations")}
+          rows={2}
+          className={`w-full bg-[#F8F7F4] border ${errors.expectations ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+          placeholder="What do you hope to learn or achieve?"
+        />
+        {errors.expectations && (
+          <p className="text-red-500 text-xs font-bold pl-2">
+            {errors.expectations.message}
+          </p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+          Why do you want to join ACM SRMIST overall?{" "}
+          <span className="text-red-500">*</span>
+        </label>
+        <textarea
+          {...register("motivation")}
+          rows={3}
+          className={`w-full bg-[#F8F7F4] border ${errors.motivation ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
+          placeholder="Tell us your motivation..."
+        />
+        {errors.motivation && (
+          <p className="text-red-500 text-xs font-bold pl-2">
+            {errors.motivation.message}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// SUB-COMPONENT: 3. Portfolio & Links
+// =========================================================================
+function PortfolioSection() {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<RecruitmentFormValues>();
+
+  return (
+    <div className="space-y-6">
+      <h3
+        className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 mt-8 ${anton.className}`}
+      >
+        3. Portfolio & Links
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            GitHub Profile URL
+          </label>
+          <input
+            {...register("github")}
+            className={`w-full bg-[#F8F7F4] border ${errors.github ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="https://github.com/username"
+          />
+          {errors.github && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.github.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            LinkedIn Profile URL <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("linkedin")}
+            className={`w-full bg-[#F8F7F4] border ${errors.linkedin ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="https://linkedin.com/in/username"
+          />
+          {errors.linkedin && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.linkedin.message}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Link to Resume/CV
+          </label>
+          <input
+            {...register("resumeLink")}
+            className={`w-full bg-[#F8F7F4] border ${errors.resumeLink ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="Ensure access is 'Anyone with link'"
+          />
+          {errors.resumeLink && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.resumeLink.message}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+            Instagram URL
+          </label>
+          <input
+            {...register("instagram")}
+            className={`w-full bg-[#F8F7F4] border ${errors.instagram ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
+            placeholder="https://instagram.com/username"
+          />
+          {errors.instagram && (
+            <p className="text-red-500 text-xs font-bold pl-2">
+              {errors.instagram.message}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
+          Any other queries or requests?
+        </label>
+        <textarea
+          {...register("queries")}
+          rows={2}
+          className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none"
+          placeholder="Optional..."
+        />
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// MAIN PAGE COMPONENT
+// =========================================================================
+export default function JoinUsPage() {
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
+
+  const methods = useForm<RecruitmentFormValues>({
+    resolver: zodResolver(recruitmentSchema),
+    defaultValues: {
+      academicYear: "",
+      domain: "",
+      secondPreference: "",
+      division: "",
+      proficiency: "",
+    },
+  });
+
   const fireConfetti = () => {
     const end = Date.now() + 3 * 1000;
     const colors = ["#00E5FF", "#7B61FF", "#FF4081", "#00A844"];
-
     (function frame() {
       confetti({
         particleCount: 5,
@@ -217,7 +773,6 @@ export default function JoinUsPage() {
 
   const onSubmit = async (data: RecruitmentFormValues) => {
     setStatus("submitting");
-
     try {
       const GOOGLE_SCRIPT_URL = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
       if (!GOOGLE_SCRIPT_URL) throw new Error("Google Script URL is missing");
@@ -231,7 +786,7 @@ export default function JoinUsPage() {
 
       setStatus("success");
       fireConfetti();
-      reset();
+      methods.reset();
     } catch (error) {
       console.error("Submission Error:", error);
       setStatus("error");
@@ -241,19 +796,27 @@ export default function JoinUsPage() {
 
   return (
     <div
-      className={`relative flex min-h-screen flex-col items-center justify-center p-4 pt-24 pb-24 bg-[#ffffff] overflow-hidden ${inter.className}`}
+      className={`relative flex min-h-screen flex-col items-center justify-center p-4 pt-24 pb-24 overflow-x-hidden ${inter.className}`}
     >
-      {/* Background Styling */}
+      {/* 
+        OPTIMIZATION: Isolated Background
+        The background is now completely decoupled from the scrolling container using `fixed inset-0`. 
+        We replaced the heavy GPU `blur-[]` classes with native CSS radial gradients.
+      */}
       <div
-        className="absolute inset-0 z-0 pointer-events-none"
+        className="fixed inset-0 -z-10 bg-[#ffffff]"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
+          background: `
+            linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px),
+            radial-gradient(circle at 25% 10%, rgba(0,229,255,0.08) 0%, transparent 50%),
+            radial-gradient(circle at 75% 30%, rgba(255,64,129,0.04) 0%, transparent 45%),
+            radial-gradient(circle at 35% 75%, rgba(123,97,255,0.08) 0%, transparent 55%)
+          `,
+          backgroundSize:
+            "40px 40px, 40px 40px, 100% 100%, 100% 100%, 100% 100%",
         }}
       />
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-acm-electric/10 rounded-full blur-[120px] pointer-events-none z-0" />
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-acm-pink/5 rounded-full blur-[120px] pointer-events-none z-0" />
-      <div className="absolute bottom-1/4 left-1/3 w-[700px] h-[700px] bg-acm-violet/10 rounded-full blur-[150px] pointer-events-none z-0" />
 
       <AnimatePresence mode="wait">
         {!isRecruitmentOpen && (
@@ -325,7 +888,7 @@ export default function JoinUsPage() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -40 }}
-            className="relative z-10 w-full max-w-4xl overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] border border-black/5 md:p-12 lg:p-16"
+            className="relative z-10 w-full max-w-4xl overflow-hidden rounded-[2.5rem] bg-white p-6 sm:p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)] border border-black/5 md:p-12 lg:p-16"
           >
             <div className="text-center mb-12">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-50 px-4 py-1.5 text-sm font-bold tracking-wide text-green-600">
@@ -380,619 +943,41 @@ export default function JoinUsPage() {
                 </button>
               </motion.div>
             ) : (
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-8 relative z-20"
-              >
-                {/* 1. Personal Info Section */}
-                <div className="space-y-6">
-                  <h3
-                    className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 ${anton.className}`}
-                  >
-                    1. Personal Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("fullName")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.fullName ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="John Doe"
-                      />
-                      {errors.fullName && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.fullName.message}
-                        </p>
-                      )}
-                    </div>
+              <FormProvider {...methods}>
+                <form
+                  onSubmit={methods.handleSubmit(onSubmit)}
+                  className="space-y-12 relative z-20"
+                >
+                  {/* OPTIMIZATION: Sub-components strictly prevent whole-page re-renders while typing */}
+                  <PersonalInfoSection />
+                  <RolePreferencesSection />
+                  <PortfolioSection />
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        SRM Registration Number{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("regNumber")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.regNumber ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] uppercase outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="RA241100301024"
-                      />
-                      {errors.regNumber && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.regNumber.message}
-                        </p>
-                      )}
-                    </div>
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
+                    <button
+                      type="submit"
+                      disabled={status === "submitting"}
+                      className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#111315] text-white px-10 py-5 rounded-full font-bold uppercase tracking-widest text-sm hover:scale-105 hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                      {status === "submitting"
+                        ? "Submitting..."
+                        : "Submit Application"}
+                      <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Personal Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("personalEmail")}
-                        type="email"
-                        className={`w-full bg-[#F8F7F4] border ${errors.personalEmail ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="pius@gmail.com"
-                      />
-                      {errors.personalEmail && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.personalEmail.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        College Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("collegeEmail")}
-                        type="email"
-                        className={`w-full bg-[#F8F7F4] border ${errors.collegeEmail ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="jd1234@srmist.edu.in"
-                      />
-                      {errors.collegeEmail && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.collegeEmail.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Contact Number (WhatsApp){" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("contactNumber")}
-                        type="tel"
-                        className={`w-full bg-[#F8F7F4] border ${errors.contactNumber ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-                        placeholder="+91 9876543210"
-                      />
-                      {errors.contactNumber && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.contactNumber.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Year of Study <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        {...register("academicYear")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.academicYear ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
-                      >
-                        <option value="" disabled>
-                          Select Year...
-                        </option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                      </select>
-                      {errors.academicYear && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.academicYear.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Domain Selection Section */}
-                <div className="space-y-6">
-                  <h3
-                    className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 mt-8 ${anton.className}`}
-                  >
-                    2. Role Preferences
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        1st Preference (Domain){" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        {...register("domain")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.domain ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
-                      >
-                        <option value="" disabled>
-                          Select 1st Preference...
-                        </option>
-                        <option value="FOUNDRY (Technical)">
-                          FOUNDRY (Technical)
-                        </option>
-                        <option value="AMPLIFIER (PR & Outreach)">
-                          AMPLIFIER (PR & Outreach)
-                        </option>
-                        <option value="ELEVATORS (Sponsorship & Finance)">
-                          ELEVATORS (Sponsorship & Finance)
-                        </option>
-                        <option value="CANVAS (Media, Creatives & Photo/Video)">
-                          CANVAS (Media, Creatives & Photo/Video)
-                        </option>
-                        <option value="ORCHESTRATORS (Corporate & Events)">
-                          ORCHESTRATORS (Corporate & Events)
-                        </option>
-                      </select>
-                      {errors.domain && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.domain.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        2nd Preference (Domain)
-                      </label>
-                      <select
-                        {...register("secondPreference")}
-                        className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer"
-                      >
-                        <option value="" disabled>
-                          Select 2nd Preference...
-                        </option>
-                        <option value="None">
-                          None (Only interested in 1st choice)
-                        </option>
-                        <option value="FOUNDRY (Technical)">
-                          FOUNDRY (Technical)
-                        </option>
-                        <option value="AMPLIFIER (PR & Outreach)">
-                          AMPLIFIER (PR & Outreach)
-                        </option>
-                        <option value="ELEVATORS (Sponsorship & Finance)">
-                          ELEVATORS (Sponsorship & Finance)
-                        </option>
-                        <option value="CANVAS (Media, Creatives & Photo/Video)">
-                          CANVAS (Media, Creatives & Photo/Video)
-                        </option>
-                        <option value="ORCHESTRATORS (Corporate & Events)">
-                          ORCHESTRATORS (Corporate & Events)
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Conditional Technical Division Dropdown */}
-                  <AnimatePresence>
-                    {isFoundrySelected && (
+                    {status === "error" && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4 pt-4 border-t border-acm-electric/10 overflow-hidden"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2 text-red-600 font-bold text-sm bg-red-50 px-4 py-2 rounded-full"
                       >
-                        <div className="bg-acm-electric/5 rounded-2xl p-6 border border-acm-electric/20 space-y-6">
-                          <h4 className="text-acm-electric font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-acm-electric animate-pulse"></span>{" "}
-                            Foundry Specific Questions
-                          </h4>
-
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
-                              Technical Division{" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              {...register("division")}
-                              className={`w-full bg-white border ${errors.division ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 cursor-pointer`}
-                            >
-                              <option value="" disabled>
-                                Select Division...
-                              </option>
-                              <option value="Competitive Programming (DSA)">
-                                Competitive Programming (DSA)
-                              </option>
-                              <option value="Full Stack + Cloud & DevOps">
-                                Full Stack + Cloud & DevOps
-                              </option>
-                              <option value="AI/ML + MLOps">
-                                AI/ML + MLOps
-                              </option>
-                            </select>
-                            {errors.division && (
-                              <p className="text-red-500 text-xs font-bold pl-2">
-                                {errors.division.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
-                              Best 2 Projects (GitHub Links){" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-                            <textarea
-                              {...register("foundryProjects")}
-                              rows={2}
-                              className={`w-full bg-white border ${errors.foundryProjects ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric focus:ring-2 focus:ring-acm-electric/20 resize-none`}
-                              placeholder="Paste your 2 best project links here..."
-                            />
-                            {errors.foundryProjects && (
-                              <p className="text-red-500 text-xs font-bold pl-2">
-                                {errors.foundryProjects.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
-                                Tech Stacks / Languages{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                {...register("foundryTechStack")}
-                                className={`w-full bg-white border ${errors.foundryTechStack ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
-                                placeholder="React, Node, Python, C++..."
-                              />
-                              {errors.foundryTechStack && (
-                                <p className="text-red-500 text-xs font-bold pl-2">
-                                  {errors.foundryTechStack.message}
-                                </p>
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold tracking-widest uppercase text-acm-electric pl-1">
-                                AI Tools Used Daily{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                {...register("foundryAITools")}
-                                className={`w-full bg-white border ${errors.foundryAITools ? "border-red-500" : "border-acm-electric/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-electric`}
-                                placeholder="ChatGPT, Copilot, Cursor..."
-                              />
-                              {errors.foundryAITools && (
-                                <p className="text-red-500 text-xs font-bold pl-2">
-                                  {errors.foundryAITools.message}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                        <AlertCircle className="w-4 h-4" /> Submission failed.
+                        Try again.
                       </motion.div>
                     )}
-                  </AnimatePresence>
-
-                  {/* Conditional Canvas Questions */}
-                  <AnimatePresence>
-                    {isCanvasSelected && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4 pt-4 border-t border-acm-pink/10 overflow-hidden"
-                      >
-                        <div className="bg-acm-pink/5 rounded-2xl p-6 border border-acm-pink/20 space-y-6">
-                          <h4 className="text-acm-pink font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-acm-pink animate-pulse"></span>{" "}
-                            Canvas Specific Questions
-                          </h4>
-
-                          <div className="space-y-2">
-                            <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
-                              Why do you want to join Canvas in particular?{" "}
-                              <span className="text-red-500">*</span>
-                            </label>
-                            <textarea
-                              {...register("canvasReason")}
-                              rows={2}
-                              className={`w-full bg-white border ${errors.canvasReason ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink focus:ring-2 focus:ring-acm-pink/20 resize-none`}
-                              placeholder="Your creative motivation..."
-                            />
-                            {errors.canvasReason && (
-                              <p className="text-red-500 text-xs font-bold pl-2">
-                                {errors.canvasReason.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
-                                Software/Tools Known{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                {...register("canvasSoftware")}
-                                className={`w-full bg-white border ${errors.canvasSoftware ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
-                                placeholder="Figma, Premiere Pro, After Effects..."
-                              />
-                              {errors.canvasSoftware && (
-                                <p className="text-red-500 text-xs font-bold pl-2">
-                                  {errors.canvasSoftware.message}
-                                </p>
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-bold tracking-widest uppercase text-acm-pink pl-1">
-                                Drive Link of Previous Work{" "}
-                                <span className="text-red-500">*</span>
-                              </label>
-                              <input
-                                {...register("portfolioLink")}
-                                className={`w-full bg-white border ${errors.portfolioLink ? "border-red-500" : "border-acm-pink/30"} rounded-xl px-5 py-4 text-[#111315] outline-none focus:border-acm-pink`}
-                                placeholder="Ensure access is 'Anyone with link'"
-                              />
-                              {errors.portfolioLink && (
-                                <p className="text-red-500 text-xs font-bold pl-2">
-                                  {errors.portfolioLink.message}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Rate your overall proficiency{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      {...register("proficiency")}
-                      className={`w-full bg-[#F8F7F4] border ${errors.proficiency ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all cursor-pointer`}
-                    >
-                      <option value="" disabled>
-                        Select Level...
-                      </option>
-                      <option value="1 - Beginner">
-                        1 - Beginner (Just starting out)
-                      </option>
-                      <option value="2 - Novice">
-                        2 - Novice (Basic understanding)
-                      </option>
-                      <option value="3 - Intermediate">
-                        3 - Intermediate (Can build/work independently)
-                      </option>
-                      <option value="4 - Advanced">
-                        4 - Advanced (Strong portfolio/experience)
-                      </option>
-                      <option value="5 - Expert">
-                        5 - Expert (Ready to lead and mentor)
-                      </option>
-                    </select>
-                    {errors.proficiency && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.proficiency.message}
-                      </p>
-                    )}
                   </div>
-
-                  {/* General Questionnaire */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Define 3 traits why we should recruit you{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("traits")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.traits ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="E.g., Hardworking, Creative, Leader"
-                      />
-                      {errors.traits && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.traits.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Previous Club Experience{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("pastExperience")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.pastExperience ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="Club Name, Position, Domain (or NA)"
-                      />
-                      {errors.pastExperience && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.pastExperience.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      How would you describe your commitment towards a club?{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      {...register("commitment")}
-                      rows={2}
-                      className={`w-full bg-[#F8F7F4] border ${errors.commitment ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
-                      placeholder="How much time/effort can you give?"
-                    />
-                    {errors.commitment && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.commitment.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      What are your expectations from ACM?{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      {...register("expectations")}
-                      rows={2}
-                      className={`w-full bg-[#F8F7F4] border ${errors.expectations ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
-                      placeholder="What do you hope to learn or achieve?"
-                    />
-                    {errors.expectations && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.expectations.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Why do you want to join ACM SRMIST overall?{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      {...register("motivation")}
-                      rows={3}
-                      className={`w-full bg-[#F8F7F4] border ${errors.motivation ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none`}
-                      placeholder="Tell us your motivation..."
-                    />
-                    {errors.motivation && (
-                      <p className="text-red-500 text-xs font-bold pl-2">
-                        {errors.motivation.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Links Section */}
-                <div className="space-y-6">
-                  <h3
-                    className={`text-2xl text-[#111315] uppercase tracking-wider border-b border-gray-100 pb-2 mt-8 ${anton.className}`}
-                  >
-                    3. Portfolio & Links
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        GitHub Profile URL
-                      </label>
-                      <input
-                        {...register("github")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.github ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="https://github.com/username"
-                      />
-                      {errors.github && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.github.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        LinkedIn Profile URL{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("linkedin")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.linkedin ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="https://linkedin.com/in/username"
-                      />
-                      {errors.linkedin && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.linkedin.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Link to Resume/CV{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        {...register("resumeLink")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.resumeLink ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="Ensure access is 'Anyone with link'"
-                      />
-                      {errors.resumeLink && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.resumeLink.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                        Instagram URL
-                      </label>
-                      <input
-                        {...register("instagram")}
-                        className={`w-full bg-[#F8F7F4] border ${errors.instagram ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue`}
-                        placeholder="https://instagram.com/username"
-                      />
-                      {errors.instagram && (
-                        <p className="text-red-500 text-xs font-bold pl-2">
-                          {errors.instagram.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold tracking-widest uppercase text-black/60 pl-1">
-                      Any other queries or requests?
-                    </label>
-                    <textarea
-                      {...register("queries")}
-                      rows={2}
-                      className="w-full bg-[#F8F7F4] border border-gray-200 rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue resize-none"
-                      placeholder="Optional..."
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">
-                  <button
-                    type="submit"
-                    disabled={status === "submitting"}
-                    className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#111315] text-white px-10 py-5 rounded-full font-bold uppercase tracking-widest text-sm hover:scale-105 hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    {status === "submitting"
-                      ? "Submitting..."
-                      : "Submit Application"}
-                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
-
-                  {status === "error" && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-2 text-red-600 font-bold text-sm bg-red-50 px-4 py-2 rounded-full"
-                    >
-                      <AlertCircle className="w-4 h-4" /> Submission failed. Try
-                      again.
-                    </motion.div>
-                  )}
-                </div>
-              </form>
+                </form>
+              </FormProvider>
             )}
           </motion.div>
         )}

@@ -555,12 +555,12 @@ const DOMAINS: Domain[] = [
     ],
     row2: [
       {
-        name: "Shabdika Mishra",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadevents1.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/shabdikamishra/",
-          instagram: "https://www.instagram.com/_shabdikaa/",
+          linkedin: "#",
+          instagram: "#",
         },
       },
       {
