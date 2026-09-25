@@ -21,8 +21,8 @@ import confetti from "canvas-confetti";
 // Initialize Google Fonts
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  style: ["normal", "italic"],
 });
+
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 const inter = Inter({ subsets: ["latin"] });
 

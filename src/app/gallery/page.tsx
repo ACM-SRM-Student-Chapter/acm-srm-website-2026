@@ -14,8 +14,8 @@ import { Playfair_Display, Anton, Inter } from "next/font/google";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  style: ["normal", "italic"],
 });
+
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 const inter = Inter({ subsets: ["latin"] });
 
