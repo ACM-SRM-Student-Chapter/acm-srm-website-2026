@@ -161,19 +161,21 @@ const CTAButtons = memo(() => (
 
     {/* Secondary */}
     <motion.div
-      whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.12)" }}
-      whileTap={{ scale: 0.96 }}
-      transition={{ type: "spring", stiffness: 380, damping: 22 }}
-      className="w-full sm:w-auto rounded-full"
-    >
-      <Link
-        href="/JoinUs"
-        className="flex w-full items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 py-4 text-sm font-bold text-white backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-        aria-label="Join our community"
-      >
-        Join Our Community
-      </Link>
-    </motion.div>
+  whileHover={{ scale: 1.03, backgroundColor: "rgba(255,255,255,0.12)" }}
+  whileTap={{ scale: 0.96 }}
+  transition={{ type: "spring", stiffness: 380, damping: 22 }}
+  className="w-full sm:w-auto rounded-full"
+>
+  <Link
+    href="https://chat.whatsapp.com/LKwaeD5aVKD2cP7GFU5IDS"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex w-full items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 py-4 text-sm font-bold text-white backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+    aria-label="Join our ACM Family WhatsApp community"
+  >
+    Join Our Community
+  </Link>
+</motion.div>
   </div>
 ));
 CTAButtons.displayName = "CTAButtons";

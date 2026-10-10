@@ -172,7 +172,7 @@ function PersonalInfoSection() {
           <input
             {...register("fullName")}
             className={`w-full bg-[#F8F7F4] border ${errors.fullName ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-            placeholder="John Doe"
+            placeholder="Pius"
           />
           {errors.fullName && (
             <p className="text-red-500 text-xs font-bold pl-2">
@@ -219,7 +219,7 @@ function PersonalInfoSection() {
             {...register("collegeEmail")}
             type="email"
             className={`w-full bg-[#F8F7F4] border ${errors.collegeEmail ? "border-red-500" : "border-gray-200"} rounded-2xl px-5 py-4 text-[#111315] outline-none focus:border-acm-blue focus:ring-2 focus:ring-acm-blue/20 transition-all`}
-            placeholder="jd1234@srmist.edu.in"
+            placeholder="ps1234@srmist.edu.in"
           />
           {errors.collegeEmail && (
             <p className="text-red-500 text-xs font-bold pl-2">
@@ -733,7 +733,7 @@ function PortfolioSection() {
 // MAIN PAGE COMPONENT
 // =========================================================================
 export default function JoinUsPage() {
-  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(false);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");
@@ -798,11 +798,6 @@ export default function JoinUsPage() {
     <div
       className={`relative flex min-h-screen flex-col items-center justify-center p-4 pt-24 pb-24 overflow-x-hidden ${inter.className}`}
     >
-      {/* 
-        OPTIMIZATION: Isolated Background
-        The background is now completely decoupled from the scrolling container using `fixed inset-0`. 
-        We replaced the heavy GPU `blur-[]` classes with native CSS radial gradients.
-      */}
       <div
         className="fixed inset-0 -z-10 bg-[#ffffff]"
         style={{

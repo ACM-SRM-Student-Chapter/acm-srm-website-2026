@@ -330,23 +330,23 @@ const STUDENT_CORE: (Member & { color: string })[] = [
     },
   },
   {
-    name: "Kevin Godfrey",
+    name: "announcing soon...",
     role: "Webmaster",
-    image: "/Team/webm.webp",
+    image: "#",
     color: "electric",
     socials: {
-      linkedin: "https://www.linkedin.com/in/kevin-godfrey-9b5643326/",
-      github: "https://github.com/Jarvis-the-og",
-      instagram: "https://www.instagram.com/rish_abhdeva/",
+      linkedin: "#",
+      github: "#",
+      instagram: "#",
     },
   },
   {
-    name: "Srilekha Kramadhati",
+    name: "announcing soon...",
     role: "Membership Chair",
-    image: "/Team/mc.webp",
+    image: "#",
     color: "pink",
     socials: {
-      linkedin: "https://www.linkedin.com/in/srilekha-kramadhati",
+      linkedin: "#",
       github: "#",
       instagram: "#",
     },
@@ -474,22 +474,21 @@ const DOMAINS: Domain[] = [
     ],
     row2: [
       {
-        name: "Yatharth Garg",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadsponsership.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/yatharth-garg2905",
-          instagram: "https://www.instagram.com/ya1hartthh",
+          linkedin: "#",
+          instagram: "#",
         },
       },
       {
-        name: "Shreyanka Chakrabarti",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadsponsor.webp",
+        image: "#",
         socials: {
-          linkedin:
-            "https://www.linkedin.com/in/shreyanka-chakrabarti-1bb912353",
-          instagram: "https://www.instagram.com/_.shreyaannkkaaa",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
@@ -499,44 +498,43 @@ const DOMAINS: Domain[] = [
     color: "pink",
     row1: [
       {
-        name: "Divita Kapoor",
+        name: "announcing soon...",
         role: "Head",
-        image: "/Team/leadcreatives.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/divita-kapoor-769327321/",
-          instagram: "https://www.instagram.com/_divi22_/",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
     row2: [
       {
-        name: "Rishabh Dev Pandey",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadcreatives2.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/rishabh-dev-pandey-1234b7282/",
-          instagram: "https://www.instagram.com/rish_abhdeva/",
-        },
-      },
-      {
-        name: "Jasmitha P",
-        role: "Co-Head",
-        image: "/Team/coleadcreatives.webp",
-        socials: {
-          linkedin: "https://www.linkedin.com/in/jasmithap1474/",
+          linkedin: "#",
           instagram: "#",
         },
       },
       {
-        name: "Richelle Ranjan",
+        name: "announcing soon...",
         role: "Co-Head",
-        image: "/Team/coleadcreatives3.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/richelle-ranjan-b38760356/",
-          instagram:
-            "https://www.instagram.com/_r.rixhelle?igsh=c3ZmMnlpY2RwN2dx",
+          linkedin: "#",
+          instagram: "#",
         },
       },
+      // {
+      //   name: "announcing soon...",
+      //   role: "Co-Head",
+      //   image: "#",
+      //   socials: {
+      //     linkedin: "#",
+      //     instagram: "#",
+      //   },
+      // },
     ],
   },
   {
