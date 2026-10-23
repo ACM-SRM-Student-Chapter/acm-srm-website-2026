@@ -2,6 +2,7 @@ import { Playfair_Display, Anton, Inter } from "next/font/google";
 import FlagshipEvent from "@/components/events/FlagshipEvent";
 import EventCard, { RegularEvent } from "@/components/events/EventCard";
 import TechGoshipsSection from "@/components/events/TechGoshipsSection";
+import PromptWarsSection from "@/components/events/PromptWarsSection";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -11,6 +12,7 @@ const anton = Anton({ subsets: ["latin"], weight: "400" });
 const inter = Inter({ subsets: ["latin"] });
 
 const REGULAR_EVENTS: RegularEvent[] = [
+
   {
     date: "15 April, 2024",
     title: "Orientation",
@@ -34,6 +36,18 @@ const REGULAR_EVENTS: RegularEvent[] = [
     color: "acm-pink",
     poster: "/events/recruitement2026.webp",
   },
+  // {
+  //   date: "Tuesday, 27 October 2026",
+  //   title: "Prompt Wars",
+  //   location: "TP-2 (Room 712) & GD Naidu Hall, SRMIST",
+  //   description:
+  //     "An intensive 8-hour AI Building Challenge presented by ACM SRMIST in collaboration with Google for Developers. Solo event, surprise problem statement, AI evaluation via Hack2Skill, and an offline grand finale with up to ₹50,000 in prizes!",
+  //   color: "acm-electric",
+  //   poster: "/events/PromptWar.jpeg",
+  //   registrationUrl: "https://hack2skill.com/event/promptwars-x-acmsrm",
+  //   badge: "REGISTRATION OPEN",
+  //   prize: "Win up to ₹50,000",
+  // },
 ];
 
 export default function EventsPage() {
@@ -84,6 +98,9 @@ export default function EventsPage() {
           explore the events that shape our chapter.
         </p>
       </div>
+
+      {/* ── Upcoming Spotlight Event: Prompt Wars ─────────────────────────── */}
+      <PromptWarsSection />
 
       {/* ── ACM Tech Goships Section ─────────────────────────────────────────── */}
       <TechGoshipsSection />

@@ -144,6 +144,34 @@ const EVENTS_DATA: EventEntry[] = [
     },
     poster: "/events/Symposium_on_Responsible_Al.webp",
   },
+  {
+    id: "04",
+    title: "Prompt Wars",
+    shortTitle: "PROMPT WARS",
+    subtitle: "8-Hour AI Building Challenge",
+    date: "27 October 2026",
+    location: "TP-2 (712) & GD Naidu Hall, SRMIST",
+    description:
+      "ACM SRMIST in collaboration with Google for Developers presents Prompt Wars - an intensive 8-hour AI Building Challenge where ideas turn into working solutions through prompt engineering and AI-assisted building.",
+    highlights: [
+      "In collaboration with Google for Developers",
+      "Win up to ₹50,000 in prizes via Hack2Skill AI evaluation",
+      "Solo challenge: 8-hour sprint with live revealed problem statement",
+      "Top 10 finalists qualify for offline showcase before an industry panel",
+    ],
+    stats: [
+      { value: "₹50K", label: "Prize Pool" },
+      { value: "8 Hrs", label: "AI Challenge" },
+    ],
+    theme: {
+      text: "text-[#00E5FF]",
+      bg: "bg-[#00E5FF]",
+      bgLight: "bg-[#00E5FF]/10",
+      border: "border-[#00E5FF]/30",
+      hex: "#00E5FF",
+    },
+    poster: "/events/PromptWar.jpeg",
+  },
 ];
 
 // ─── Shared slide variants ────────────────────────────────────────────────────

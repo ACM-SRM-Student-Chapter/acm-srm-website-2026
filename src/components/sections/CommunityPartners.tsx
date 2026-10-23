@@ -122,26 +122,26 @@ const PARTNERS_DATA: Partner[] = [
       twitter: "https://x.com/reactkolkata",
     },
   },
-  {
-    name: "Social Summer of Code",
-    description:
-      "A 3-month open-source program building an Open-Source First mindset through guided mentorship for contributors, mentors, and project admins.",
-    logo: "/communityPartners/SSOC.webp",
-    accentHex: "#22c55e",
-    cta: {
-      text: "Register for SSOC'26",
-      link: "https://socialsummerofcode.com/?ref=md-nayaj-mondal",
-      bgClass: "bg-[#22c55e] hover:bg-[#16a34a]",
-      hex: "#22c55e",
-      icon: <ExternalLink className="h-3.5 w-3.5" aria-hidden />,
-    },
-    socials: {
-      website: "https://socialsummerofcode.com",
-      linkedin: "https://www.linkedin.com/showcase/socialsummerofcode/",
-      instagram: "https://www.instagram.com/socialsummerofcode/",
-      twitter: "https://x.com/socialsummeroc",
-    },
+ {
+  name: "Google for Developers",
+  description:
+    "A global developer community empowering developers with tools, resources, and technologies to build innovative solutions using Google technologies.",
+  logo: "/communityPartners/googlefordev.png",
+  accentHex: "#4285F4",
+  cta: {
+    text: "Explore Google for Developers",
+    link: "https://developers.google.com/",
+    bgClass: "bg-[#4285F4] hover:bg-[#3367D6]",
+    hex: "#4285F4",
+    icon: <ExternalLink className="h-3.5 w-3.5" aria-hidden />,
   },
+  socials: {
+    website: "https://developers.google.com/",
+    linkedin: "https://www.linkedin.com/showcase/google-for-developers/",
+    instagram: "https://www.instagram.com/googlefordevs/",
+    twitter: "https://x.com/googledevs",
+  },
+},
 ];
 
 // Social link config — kept module-scope to avoid recreation

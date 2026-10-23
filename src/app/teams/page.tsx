@@ -308,14 +308,14 @@ const STUDENT_CORE: (Member & { color: string })[] = [
     },
   },
   {
-    name: "Dhruv Pratap Singh",
+    name: "announcing soon...",
     role: "Secretary",
-    image: "/Team/SECRETARY.webp",
+    image: "#",
     color: "violet",
     socials: {
-      linkedin: "https://www.linkedin.com/in/dhruv-pratap-singh-044872341",
-      github: "https://github.com/Dhruv2-lang",
-      instagram: "https://www.instagram.com/dhruv_singh2303/",
+      linkedin: "#",
+      github: "#",
+      instagram: "#",
     },
   },
   {
@@ -439,12 +439,12 @@ const DOMAINS: Domain[] = [
     ],
     row2: [
       {
-        name: "Jay Solanki",
-        role: "Co-lead",
-        image: "/Team/coleadpr1.webp",
+        name: "Announcing Soon",
+        role: "Co-Head",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/jay-solanki-b7116a329",
-          instagram: "https://www.instagram.com/jay.solankii_20",
+          linkedin: "#",
+          instagram: "#",
         },
       },
       {
@@ -483,12 +483,12 @@ const DOMAINS: Domain[] = [
         },
       },
       {
-        name: "announcing soon...",
+        name: "Jay Solanki",
         role: "Co-Head",
-        image: "#",
+        image: "/Team/coleadpr1.webp",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/jay-solanki-b7116a329",
+          instagram: "https://www.instagram.com/jay.solankii_20",
         },
       },
     ],

@@ -733,7 +733,7 @@ function PortfolioSection() {
 // MAIN PAGE COMPONENT
 // =========================================================================
 export default function JoinUsPage() {
-  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(false);
+  const [isRecruitmentOpen, setIsRecruitmentOpen] = useState(true);
   const [status, setStatus] = useState<
     "idle" | "submitting" | "success" | "error"
   >("idle");

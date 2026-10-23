@@ -325,10 +325,10 @@ export default function Footer() {
                   aria-hidden
                 />
                 <a
-                  href="tel:+919513731600"
+                  href="tel:+919983898149"
                   className="transition-colors hover:text-acm-electric focus-visible:outline-none"
                 >
-                  +91 95137 31600
+                  +91 99838 98149
                 </a>
               </div>
               <div className="flex items-center gap-3 group">

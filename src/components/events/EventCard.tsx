@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { motion, Variants } from "framer-motion";
-import { Calendar, MapPin, User } from "lucide-react";
+import { Calendar, MapPin, User, ExternalLink, Trophy } from "lucide-react";
 import { Playfair_Display, Anton } from "next/font/google";
 import Image from "next/image";
 
@@ -19,6 +19,9 @@ export interface RegularEvent {
   speakers?: string[];
   color: string;
   poster?: string;
+  registrationUrl?: string;
+  badge?: string;
+  prize?: string;
 }
 
 const cardVariants = (fromLeft: boolean): Variants => ({
@@ -122,11 +125,25 @@ const EventCard = memo(
             </div>
           )}
 
-          <div
-            className={`mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-${event.color} w-fit`}
-          >
-            <Calendar className="h-4 w-4" aria-hidden />
-            <time>{event.date}</time>
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div
+              className={`inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-${event.color} w-fit`}
+            >
+              <Calendar className="h-4 w-4" aria-hidden />
+              <time>{event.date}</time>
+            </div>
+            {event.badge && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {event.badge}
+              </span>
+            )}
+            {event.prize && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 border border-amber-400/30 px-3 py-1 text-xs font-bold text-amber-300">
+                <Trophy className="w-3.5 h-3.5" />
+                {event.prize}
+              </span>
+            )}
           </div>
 
           <h3
@@ -165,6 +182,20 @@ const EventCard = memo(
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {event.registrationUrl && (
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <a
+                href={event.registrationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-acm-electric to-acm-violet px-6 py-3 text-sm font-extrabold text-[#060010] uppercase tracking-wider hover:opacity-90 transition-opacity shadow-lg"
+              >
+                Register on Hack2Skill
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           )}
         </motion.div>
