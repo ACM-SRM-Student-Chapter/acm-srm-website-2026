@@ -28,7 +28,7 @@ const testimonials = [
   },
   {
     name: "MD NAYAJ MONDAL",
-    role: "Technical Head",
+    role: "Former Technical Head",
     quote:
       "The technical acceleration I've experienced here is unmatched. From architectural design to deploying open-source projects, ACM is the ultimate catalyst for developers.",
   },

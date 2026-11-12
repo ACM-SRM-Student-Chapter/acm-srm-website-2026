@@ -114,10 +114,10 @@ const Counter = React.memo(
 );
 
 const statsData = [
-  { id: 1, label: "Projects", value: 2, suffix: "+" },
-  { id: 2, label: "Hackathons", value: 3, suffix: "+" },
-  { id: 3, label: "Members", value: 90, suffix: "+" },
-  { id: 4, label: "Collabs", value: 5, suffix: "+" },
+  { id: 1, label: "Projects", value: 4, suffix: "+" },
+  { id: 2, label: "Hackathons", value: 5, suffix: "+" },
+  { id: 3, label: "Members", value: 101, suffix: "+" },
+  { id: 4, label: "Collabs", value: 7, suffix: "+" },
 ];
 
 export default function Stats() {

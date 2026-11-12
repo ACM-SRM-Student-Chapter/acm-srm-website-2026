@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, ArrowRight } from "lucide-react";
+import { Clock, ArrowRight, ExternalLink, PlayCircle } from "lucide-react";
 import { Playfair_Display, Anton } from "next/font/google";
+import type { BlogPost } from "@/data/blogs";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -11,7 +12,7 @@ const playfair = Playfair_Display({
 const anton = Anton({ subsets: ["latin"], weight: "400" });
 
 interface BlogCardProps {
-  post: any;
+  post: BlogPost;
   index: number;
   onClick: () => void;
 }
@@ -45,10 +46,40 @@ export default function BlogCard({ post, index, onClick }: BlogCardProps) {
           {post.title}
         </h3>
         <p
-          className={`mb-6 flex-1 text-lg text-black/70 leading-relaxed italic line-clamp-3 ${playfair.className}`}
+          className={`mb-5 flex-1 text-lg text-black/70 leading-relaxed italic line-clamp-3 ${playfair.className}`}
         >
           {post.excerpt}
         </p>
+
+        {(post.linkedinUrl || post.youtubeUrl) && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {post.linkedinUrl && (
+              <a
+                href={post.linkedinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#0A66C2]/10 border border-[#0A66C2]/25 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white transition-colors"
+              >
+                LinkedIn Article
+                <ExternalLink className="h-3 w-3" aria-hidden />
+              </a>
+            )}
+            {post.youtubeUrl && (
+              <a
+                href={post.youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/25 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+              >
+                <PlayCircle className="h-3.5 w-3.5" aria-hidden />
+                Watch Video
+              </a>
+            )}
+          </div>
+        )}
+
         <div className="mt-auto flex items-center justify-between border-t border-black/5 pt-4 text-xs font-bold uppercase tracking-widest text-black/50 font-sans">
           <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" /> {post.readTime}

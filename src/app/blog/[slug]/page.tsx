@@ -1,7 +1,7 @@
 import { Metadata, ResolvingMetadata } from "next";
 import { notFound } from "next/navigation";
 import { Playfair_Display, Anton, Inter } from "next/font/google";
-import { CalendarDays, Clock, User, ArrowLeft } from "lucide-react";
+import { CalendarDays, Clock, User, ArrowLeft, ExternalLink, PlayCircle } from "lucide-react";
 import Link from "next/link";
 
 // Initialize Google Fonts
@@ -16,6 +16,24 @@ const inter = Inter({ subsets: ["latin"] });
 // In a real app, this would fetch from a database, MDX files, or a CMS (like Sanity/Contentful)
 const getPostBySlug = async (slug: string) => {
   const posts = [
+    {
+      slug: "ultimate-guide-ats-friendly-resume-ai-latex",
+      title:
+        "Ultimate Guide: How to Build a Killer, ATS-Friendly Resume Using AI & LaTeX",
+      excerpt:
+        "Recruiters spend an average of just 6 to 8 seconds scanning a resume—and up to 75% of resumes are filtered out by ATS bots before a human ever sees them.",
+      content:
+        "If you are using multi-column templates, graphics, tables, or text boxes, ATS parsers often scramble your data into an instant rejection. By combining AI to sharpen your impact bullets with LaTeX on Overleaf for clean, machine-readable formatting, you can craft a single-page tech resume that beats ATS algorithms and stands out to recruiters. Read the complete step-by-step guide—covering the 7-section Golden ATS Structure, the Action Verb + Task + Impact formula, and the Master AI Prompt Cheat Sheet—on the original LinkedIn article, or watch the full walkthrough on YouTube.",
+      category: "Tutorials",
+      author: "MD Nayaj Mondal",
+      date: "July 3, 2026",
+      isoDate: "2026-07-03T08:00:00+05:30",
+      readTime: "6 min read",
+      image: "/BlogsPoster/th1.png",
+      linkedinUrl:
+        "https://www.linkedin.com/pulse/ultimate-guide-how-build-killer-ats-friendly-resume-using-dmp5f",
+      youtubeUrl: "https://youtu.be/tFrYzUAZWzg?si=RZNqYabN6Plahru1",
+    },
     {
       slug: "understanding-react-server-components",
       title: "Understanding React Server Components in Next.js 14",
@@ -38,10 +56,11 @@ const getPostBySlug = async (slug: string) => {
 // 1. DYNAMIC METADATA GENERATION
 // ==========================================
 export async function generateMetadata(
-  { params }: { params: { slug: string } },
-  parent: ResolvingMetadata,
+  { params }: { params: Promise<{ slug: string }> },
+  _parent: ResolvingMetadata,
 ): Promise<Metadata> {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return { title: "Post Not Found | ACM SRMIST" };
@@ -81,9 +100,10 @@ export async function generateMetadata(
 export default async function BlogPostPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const post = await getPostBySlug(params.slug);
+  const { slug } = await params;
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
@@ -188,7 +208,33 @@ export default async function BlogPostPage({
             {post.excerpt}
           </p>
           <p>{post.content}</p>
-          {/* Add your MDX renderer or HTML content here */}
+
+          {(post.linkedinUrl || post.youtubeUrl) && (
+            <div className="not-prose mt-10 flex flex-wrap items-center gap-4 border-t border-black/10 pt-8">
+              {post.linkedinUrl && (
+                <a
+                  href={post.linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 rounded-full bg-[#0A66C2] px-6 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white shadow-[0_8px_24px_rgba(10,102,194,0.3)] hover:bg-[#004182] transition-colors"
+                >
+                  Read Full Article on LinkedIn
+                  <ExternalLink className="h-4 w-4" aria-hidden />
+                </a>
+              )}
+              {post.youtubeUrl && (
+                <a
+                  href={post.youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2.5 rounded-full bg-red-600 px-6 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-white shadow-[0_8px_24px_rgba(220,38,38,0.28)] hover:bg-red-700 transition-colors"
+                >
+                  <PlayCircle className="h-4 w-4" aria-hidden />
+                  Watch Video on YouTube
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </article>

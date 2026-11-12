@@ -3,6 +3,7 @@
 import { useRef, useState, useMemo, useEffect, memo } from "react";
 import {
   motion,
+  AnimatePresence,
   useScroll,
   useSpring,
   useAnimationFrame,
@@ -55,6 +56,7 @@ interface Socials {
   instagram?: string;
   website?: string;
 }
+
 interface Member {
   name: string;
   role: string;
@@ -62,11 +64,19 @@ interface Member {
   socials: Socials;
   color?: string;
 }
+
+interface Division {
+  name: string;
+  lead: Member;
+  coLead: Member;
+}
+
 interface Domain {
   title: string;
   color: string;
-  row1: Member[];
-  row2: Member[];
+  head: Member[];
+  coHeads: Member[];
+  divisions?: Division[];
 }
 
 // ─── CSS for shimmer — injected once via <style> ──────────────────────────────
@@ -178,39 +188,12 @@ const FACULTIES_DATA: Member[] = [
     },
   },
   {
-    name: "Dr Bhargavi G",
-    role: "Core Committee",
-    image: "/Team/Faculties/Dr-Bhargavi-G.webp",
-    socials: {
-      website: "https://www.srmist.edu.in/faculty/mrs-bhargavi-g/",
-      linkedin: "https://www.linkedin.com/in/bhargavi-g-6832911b7/",
-    },
-  },
-  {
-    name: "Dr Ajanthaa Lakkshmanan",
-    role: "Core Committee",
-    image: "/Team/Faculties/Dr-Ajanthaa-Lakkshmanan.webp",
-    socials: {
-      website: "https://www.srmist.edu.in/faculty/dr-ajanthaa-lakkshmanan/",
-      linkedin: "https://www.linkedin.com/in/ajanthaa-lakkshmanan-3458602a0/",
-    },
-  },
-  {
     name: "Dr S Hemavathi",
     role: "Core Committee",
     image: "/Team/Faculties/Dr-S-Hemavathi.webp",
     socials: {
       website: "https://www.srmist.edu.in/faculty/dr-hemavathi-s/",
       linkedin: "#",
-    },
-  },
-  {
-    name: "Dr U M Prakash",
-    role: "Core Committee",
-    image: "/Team/Faculties/Dr-U-M-Prakash.webp",
-    socials: {
-      website: "https://www.srmist.edu.in/faculty/mr-u-m-prakash/",
-      linkedin: "https://www.linkedin.com/in/prakashmuthusamyum",
     },
   },
   {
@@ -267,16 +250,7 @@ const FACULTIES_DATA: Member[] = [
       linkedin: "https://www.linkedin.com/in/jishnuks17/",
     },
   },
-  {
-    name: "Dr Dandumahanti Bhanu Priya",
-    role: "Core Committee",
-    image: "/Team/Faculties/Dr-Dandumahanti-Bhanu-Priya.webp",
-    socials: {
-      website: "https://www.srmist.edu.in/faculty/dr-dandumahanti-bhanu-priya/",
-      linkedin:
-        "https://www.linkedin.com/in/bhanu-priya-dandumahanti-5b6361145/",
-    },
-  },
+  
 ];
 
 // Split once — no slice() on every render
@@ -307,15 +281,37 @@ const STUDENT_CORE: (Member & { color: string })[] = [
         "https://www.instagram.com/notvatsaaa?igsh=MTk5bm9ma3ozOG53ag%3D%3D&utm_source=qr",
     },
   },
+    {
+    name: "MD Nayaj Mondal",
+    role: "Webmaster",
+    image: "/Team/webm.webp",
+    color: "electric",
+     socials: {
+          linkedin: "https://www.linkedin.com/in/md-nayaj-mondal",
+          github: "https://github.com/mdnm18",
+          instagram: "https://www.instagram.com/md._n.m._india_18/",
+        },
+  },
   {
-    name: "announcing soon...",
+    name: "Ayush Joshi",
     role: "Secretary",
-    image: "#",
+    image: "/Team/SECRETARY.webp",
     color: "violet",
     socials: {
-      linkedin: "#",
-      github: "#",
-      instagram: "#",
+      linkedin: "https://www.linkedin.com/in/ayush-joshi-7337b9317/",
+       github: "#", 
+          instagram: "https://www.instagram.com/_joshi_ayush_"
+    },
+  },
+   {
+    name: "Kiran Paul K",
+    role: "Joint Secretary",
+    image: "/Team/JOINTSECRETARY.png",
+    color: "pink",
+    socials: {
+      linkedin: "https://www.linkedin.com/in/kiranpauls/",
+      github: "https://github.com/kiran58-max",
+      instagram: "https://www.instagram.com/_kevin_j03",
     },
   },
   {
@@ -329,81 +325,50 @@ const STUDENT_CORE: (Member & { color: string })[] = [
       instagram: "https://www.instagram.com/amayjariwala_1109",
     },
   },
-  {
-    name: "announcing soon...",
-    role: "Webmaster",
-    image: "#",
-    color: "electric",
-    socials: {
-      linkedin: "#",
-      github: "#",
-      instagram: "#",
-    },
-  },
-  {
-    name: "announcing soon...",
-    role: "Membership Chair",
-    image: "#",
-    color: "pink",
-    socials: {
-      linkedin: "#",
-      github: "#",
-      instagram: "#",
-    },
-  },
+
+  // {
+  //   name: "announcing soon...",
+  //   role: "Membership Chair",
+  //   image: "#",
+  //   color: "pink",
+  //   socials: {
+  //     linkedin: "#",
+  //     github: "#",
+  //     instagram: "#",
+  //   },
+  // },
 ];
+
+const DOMAIN_FILTERS = [
+  "ALL",
+  "Foundry",
+  "Orchestrators",
+  "Elevators",
+  "Amplifier",
+  "Canvas",
+] as const;
+
+type DomainFilter = (typeof DOMAIN_FILTERS)[number];
 
 const DOMAINS: Domain[] = [
   {
     title: "Foundry",
     color: "electric",
-    row1: [
-      {
-        name: "MD Nayaj Mondal",
-        role: "Head",
-        image: "/Team/headtech.webp",
-        socials: {
-          linkedin: "https://www.linkedin.com/in/md-nayaj-mondal",
-          github: "https://github.com/mdnm18",
-          instagram: "https://www.instagram.com/md._n.m._india_18/",
-        },
-      },
+    head: [
       {
         name: "Rajrupa Das",
-        role: "Co-Head",
-        image: "/Team/coheadtech.webp",
+        role: "Head",
+        image: "/Team/headtech.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/rajrupa-das-8b9597324",
           github: "https://github.com/RajrupaDas",
           instagram: "#",
         },
       },
-    ],
-    row2: [
-      {
-        name: "MD Ashif Iqbal",
-        role: "Lead – Competitive Programming",
-        image: "/Team/leadcpo.webp",
-        socials: {
-          linkedin: "https://www.linkedin.com/in/md-ashif-iqbal/",
-          github: "https://github.com/ashif-iqbal",
-          instagram: "https://www.instagram.com/_ashif.x_x",
-        },
-      },
-      {
-        name: "Shudhanshu Kumar",
-        role: "Lead – Web Dev + Cloud & DevOps",
-        image: "/Team/leadwebdev.webp",
-        socials: {
-          linkedin: "https://www.linkedin.com/in/shudhanshukumar",
-          github: "https://github.com/Shudhanshu9122",
-          instagram: "https://www.instagram.com/fit_shudhanshu_",
-        },
-      },
       {
         name: "Yatindra Rai",
-        role: "Lead – AI/ML & MLOps",
-        image: "Team/leadaiml.webp",
+        role: "Co-Head",
+        image: "/Team/leadaiml.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/yatindra-rai-6a3181324/",
           github:
@@ -411,45 +376,109 @@ const DOMAINS: Domain[] = [
           instagram: "https://www.instagram.com/yatindra_0045/",
         },
       },
+    ],
+    coHeads: [],
+    divisions: [
+          {
+        name: "Competitive Programming",
+        lead: {
+          name: "MD Ashif Iqbal",
+          role: "Lead",
+          image: "/Team/leadcpo.webp",
+          socials: {
+            linkedin: "https://www.linkedin.com/in/md-ashif-iqbal/",
+            github: "https://github.com/ashif-iqbal",
+            instagram: "https://www.instagram.com/_ashif.x_x",
+          },
+        },
+        coLead: {
+          name: "Raushan Kumar",
+          role: "Co-Lead",
+          image: "#",
+          socials: {
+            linkedin: "https://www.linkedin.com/in/raushan-kumar1504/",
+            github: "https://github.com/Raushan1504",
+            instagram: "https://www.instagram.com/rashukumar1504/",
+          },
+        },
+      },
+            {
+        name: "Web Dev + Cloud & DevOps",
+        lead: {
+          name: "Om Prakash Samal",
+          role: "Lead",
+          image: "/Team/coleadwebdev.webp",
+          socials: {
+            linkedin: "https://www.linkedin.com/in/om-prakash-samal06/",
+            github: "https://github.com/Om-Prakash-Samal",
+            instagram: "https://www.instagram.com/om_prakash_samal18/",
+          },
+        },
+        coLead: {
+          name: "Mohammed Fahad Kasim",
+          role: "Co-Lead",
+          image: "#",
+          socials: {
+            linkedin:
+              "https://www.linkedin.com/in/mohammed-fahad-kasim-0bb97a256/",
+            github: "#",
+            instagram: "https://www.instagram.com/fahadchamp18/",
+          },
+        },
+      },
       {
-        name: "Om Prakash Samal",
-        role: "Co-Lead – Web Dev + Cloud & DevOps",
-        image: "/Team/coleadwebdev.webp",
-        socials: {
-          linkedin: "https://www.linkedin.com/in/om-prakash-samal06/",
-          github: "https://github.com/Om-Prakash-Samal",
-          instagram: "https://www.instagram.com/om_prakash_samal18/",
+        name: "AI/ML & MLOps",
+        lead: {
+          name: "Shudhanshu Kumar",
+          role: "Lead",
+          image: "/Team/leadwebdev.webp",
+          socials: {
+            linkedin: "https://www.linkedin.com/in/shudhanshukumar",
+            github: "https://github.com/Shudhanshu9122",
+            instagram: "https://www.instagram.com/fit_shudhanshu_",
+          },
+        },
+        coLead: {
+          name: "Sai Sraddha Krishnan",
+          role: "Co-Lead",
+          image: "#",
+          socials: {
+            linkedin:
+              "https://www.linkedin.com/in/sai-sraddha-krishnan-9813193a6/",
+            github: "#",
+            instagram: "https://www.instagram.com/sshraddha.krishnan/",
+          },
         },
       },
     ],
   },
   {
-    title: "Amplifier",
-    color: "violet",
-    row1: [
+    title: "Orchestrators",
+    color: "blue",
+    head: [
       {
-        name: "announcing soon...",
-        role: "Lead",
+        name: "Ved Vardhan Vishnoi",
+        role: "Head",
         image: "#",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/ved-vardhan-vishnoi/",
+          instagram: "https://www.instagram.com/veeeeed__/",
         },
       },
     ],
-    row2: [
+    coHeads: [
       {
-        name: "Announcing Soon",
+        name: "PUNYATOYA BISWAL",
         role: "Co-Head",
-        image: "#",
+        image: "/Team/coheadevents.png",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/punyatoya-biswal-66720437a/",
+          instagram: "https://www.instagram.com/punya_si07/",
         },
       },
       {
         name: "announcing soon...",
-        role: "Co-lead",
+        role: "Co-Head",
         image: "#",
         socials: {
           linkedin: "#",
@@ -461,31 +490,32 @@ const DOMAINS: Domain[] = [
   {
     title: "Elevators",
     color: "green",
-    row1: [
+    head: [
       {
-        name: "announcing soon...",
+        name: "ANUSHKA S TIWARI",
         role: "Head",
         image: "#",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/anushka-s-tiwari-382410384/",
+          instagram: "https://www.instagram.com/anuusshka._/",
         },
       },
     ],
-    row2: [
+    coHeads: [
       {
-        name: "announcing soon...",
+        name: "SHREYANKA CHAKRABARTI",
         role: "Co-Head",
-        image: "#",
+        image: "/Team/coleadsponsor.webp",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin:
+            "https://www.linkedin.com/in/shreyanka-chakrabarti-1bb912353/",
+          instagram: "https://www.instagram.com/_.shreyaannkkaaa/",
         },
       },
       {
         name: "Jay Solanki",
         role: "Co-Head",
-        image: "/Team/coleadpr1.webp",
+        image: "/Team/coleadsponsor2.webp",
         socials: {
           linkedin: "https://www.linkedin.com/in/jay-solanki-b7116a329",
           instagram: "https://www.instagram.com/jay.solankii_20",
@@ -494,64 +524,55 @@ const DOMAINS: Domain[] = [
     ],
   },
   {
-    title: "Canvas",
-    color: "pink",
-    row1: [
+    title: "Amplifier",
+    color: "violet",
+    head: [
       {
-        name: "announcing soon...",
+        name: "Samayshrey Patnaik",
         role: "Head",
-        image: "#",
+        image: "/Team/Headpr.png",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/samayshrey-patnaik/",
+          instagram: "https://www.instagram.com/isomoii/",
         },
       },
     ],
-    row2: [
+    coHeads: [
       {
-        name: "announcing soon...",
+        name: "ARPITA MOHAPATRA",
         role: "Co-Head",
         image: "#",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/arpita-mohapatra-2b4387397/",
+          instagram: "https://www.instagram.com/arpitamoha_1005/",
         },
       },
       {
-        name: "announcing soon...",
+        name: "ARUNIMA NIGAM",
         role: "Co-Head",
         image: "#",
         socials: {
-          linkedin: "#",
-          instagram: "#",
+          linkedin: "https://www.linkedin.com/in/arunima-nigam-12a444378/",
+          instagram: "https://www.instagram.com/aru_nigss/",
         },
       },
-      // {
-      //   name: "announcing soon...",
-      //   role: "Co-Head",
-      //   image: "#",
-      //   socials: {
-      //     linkedin: "#",
-      //     instagram: "#",
-      //   },
-      // },
     ],
   },
   {
-    title: "Orchestrators",
-    color: "blue",
-    row1: [
+    title: "Canvas",
+    color: "pink",
+    head: [
       {
-        name: "Ayush Joshi",
+        name: "announcing soon...",
         role: "Head",
-        image: "/Team/leadevents.webp",
+        image: "#",
         socials: {
-          linkedin: "https://www.linkedin.com/in/ayush-joshi-7337b9317/",
-          instagram: "https://www.instagram.com/_joshi_ayush_",
+          linkedin: "#",
+          instagram: "#",
         },
       },
     ],
-    row2: [
+    coHeads: [
       {
         name: "announcing soon...",
         role: "Co-Head",
@@ -745,52 +766,153 @@ const DomainSection = memo(
             accent={domain.color}
           />
 
-          <div className="flex flex-col items-center gap-10 w-full">
-            {/* Row 1: Leads */}
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              className="flex w-full max-w-3xl flex-wrap justify-center gap-6 md:gap-8"
-            >
-              {domain.row1.map((member) => (
+          {/* ─── Foundry Domain: Head & Co-Head, then Division-wise Leads & Co-Leads ─── */}
+          {domain.divisions ? (
+            <div className="flex flex-col items-center w-full">
+              {/* Head & Co-Head */}
+              <div className="flex flex-col items-center w-full mb-12">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-black/5 px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black/60 border border-black/10">
+                  Domain Leadership
+                </div>
                 <motion.div
-                  key={member.name}
-                  variants={cardReveal}
-                  className="w-full sm:w-[calc(50%-16px)] md:w-[38%]"
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  className="flex w-full max-w-3xl flex-wrap justify-center gap-6 md:gap-8"
                 >
-                  <TeamCard {...member} accentColor={domain.color as any} />
+                  {domain.head.map((member) => (
+                    <motion.div
+                      key={member.name}
+                      variants={cardReveal}
+                      className="w-full sm:w-[calc(50%-16px)] md:w-[38%]"
+                    >
+                      <TeamCard {...member} accentColor={domain.color} />
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
+              </div>
 
-            {/* Visual divider between rows */}
-            <div
-              className={`w-16 h-px bg-acm-${domain.color}/25`}
-              aria-hidden
-            />
+              {/* Visual divider */}
+              <div
+                className={`w-20 h-px bg-acm-${domain.color}/30 mb-14`}
+                aria-hidden
+              />
 
-            {/* Row 2: Co-Leads */}
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-40px" }}
-              className="flex w-full max-w-5xl flex-wrap justify-center gap-6 md:gap-8"
-            >
-              {domain.row2.map((member, idx) => (
+              {/* Division-wise Leads & Co-Leads */}
+              <div className="flex flex-col items-center w-full gap-10">
+                <div className="text-center">
+                  <div className="text-xs font-mono font-bold uppercase tracking-widest text-black/40 mb-1">
+                    Technical Divisions
+                  </div>
+                  <div
+                    className={`text-2xl md:text-3xl uppercase tracking-wide text-[#111315] ${anton.className}`}
+                  >
+                    Division Leads &amp; Co-Leads
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-10 w-full max-w-5xl">
+                  {domain.divisions.map((division) => (
+                    <div
+                      key={division.name}
+                      className="w-full flex flex-col items-center rounded-3xl bg-black/[0.015] border border-black/5 p-6 md:p-8"
+                    >
+                      <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-acm-electric/40 bg-acm-electric/10 px-5 py-2 font-mono text-xs font-bold uppercase tracking-wider text-[#111315]">
+                        <span className="w-2 h-2 rounded-full bg-acm-electric" />
+                        {division.name}
+                      </div>
+
+                      <motion.div
+                        variants={staggerContainer}
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-40px" }}
+                        className="flex w-full max-w-3xl flex-wrap justify-center gap-6 md:gap-8"
+                      >
+                        <motion.div
+                          variants={cardReveal}
+                          className="w-full sm:w-[calc(50%-16px)] md:w-[38%]"
+                        >
+                          <TeamCard
+                            {...division.lead}
+                            accentColor={domain.color}
+                          />
+                        </motion.div>
+                        <motion.div
+                          variants={cardReveal}
+                          className="w-full sm:w-[calc(50%-16px)] md:w-[38%]"
+                        >
+                          <TeamCard
+                            {...division.coLead}
+                            accentColor={domain.color}
+                          />
+                        </motion.div>
+                      </motion.div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ─── Standard Domains: Head, then Co-Heads ─── */
+            <div className="flex flex-col items-center gap-10 w-full">
+              {/* Head */}
+              <div className="flex flex-col items-center w-full">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-black/5 px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black/60 border border-black/10">
+                  Domain Head
+                </div>
                 <motion.div
-                  key={member.name}
-                  variants={cardReveal}
-                  custom={idx * 0.08}
-                  className="w-full sm:w-[calc(50%-16px)] md:w-[calc(33%-16px)] lg:w-[calc(25%-16px)]"
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  className="flex w-full max-w-3xl flex-wrap justify-center gap-6 md:gap-8"
                 >
-                  <TeamCard {...member} accentColor={domain.color as any} />
+                  {domain.head.map((member) => (
+                    <motion.div
+                      key={member.name}
+                      variants={cardReveal}
+                      className="w-full sm:w-[calc(50%-16px)] md:w-[38%]"
+                    >
+                      <TeamCard {...member} accentColor={domain.color} />
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
-          </div>
+              </div>
+
+              {/* Visual divider between rows */}
+              <div
+                className={`w-16 h-px bg-acm-${domain.color}/25`}
+                aria-hidden
+              />
+
+              {/* Co-Heads */}
+              <div className="flex flex-col items-center w-full">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-black/5 px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black/60 border border-black/10">
+                  Domain Co-Heads
+                </div>
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-40px" }}
+                  className="flex w-full max-w-5xl flex-wrap justify-center gap-6 md:gap-8"
+                >
+                  {domain.coHeads.map((member, idx) => (
+                    <motion.div
+                      key={`${member.name}-${idx}`}
+                      variants={cardReveal}
+                      custom={idx * 0.08}
+                      className="w-full sm:w-[calc(50%-16px)] md:w-[calc(33%-16px)] lg:w-[calc(28%-16px)]"
+                    >
+                      <TeamCard {...member} accentColor={domain.color} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </section>
@@ -800,6 +922,14 @@ DomainSection.displayName = "DomainSection";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function TeamsPage() {
+  const [selectedDomain, setSelectedDomain] = useState<DomainFilter>("ALL");
+  const prefersReducedMotion = useReducedMotion();
+
+  const displayedDomains = useMemo(() => {
+    if (selectedDomain === "ALL") return DOMAINS;
+    return DOMAINS.filter((d) => d.title === selectedDomain);
+  }, [selectedDomain]);
+
   return (
     <>
       {/* Shimmer keyframe — a single <style> tag is cleaner than dangerouslySetInnerHTML on a div */}
@@ -869,7 +999,7 @@ export default function TeamsPage() {
 
         {/* ── All Sections ──────────────────────────────────────────────────── */}
         <div className="w-full relative z-10 space-y-32 md:space-y-40">
-          {/* 01 — Faculty Leadership */}
+          {/* 01 — Faculty Leadership (Constant) */}
           <section className="w-full">
             <div className="container mx-auto px-4">
               <SectionHeader
@@ -879,7 +1009,7 @@ export default function TeamsPage() {
               />
             </div>
 
-            {/* Sponsor — centered, max-width constrained */}
+            {/* Sponsor & Convenor — centered, max-width constrained */}
             <div className="container mx-auto px-4 mb-16 flex justify-center">
               <motion.div
                 initial={{ opacity: 0, scale: 0.94 }}
@@ -892,16 +1022,16 @@ export default function TeamsPage() {
               </motion.div>
             </div>
 
-            {/* Marquee — full-bleed, no negative margin hacks */}
+            {/* Core Committee Marquee — full-bleed */}
             <div className="w-full flex flex-col gap-6 overflow-hidden">
               <VelocityMarquee items={FACULTY_ROW_1} baseVelocity={-50} />
               <VelocityMarquee items={FACULTY_ROW_2} baseVelocity={50} />
             </div>
           </section>
 
-          {/* 02 — Student Core (Interactive ID Cards) */}
+          {/* 02 — Office Bearers (Constant / Interactive ID Cards) */}
           <section className="container mx-auto px-4 sm:px-6">
-            <SectionHeader label="Student Core" index={2} accent="violet" />
+            <SectionHeader label="Office Bearers" index={2} accent="violet" />
 
             <motion.p
               initial={{ opacity: 0 }}
@@ -937,9 +1067,79 @@ export default function TeamsPage() {
             </div>
           </section>
 
-          {DOMAINS.map((domain, idx) => (
-            <DomainSection key={domain.title} domain={domain} index={idx} />
-          ))}
+          {/* 03 — Domains with Interactive Domain Filter */}
+          <section className="w-full">
+            <div className="container mx-auto px-4 mb-4">
+              <SectionHeader label="Our Domains" index={3} accent="electric" />
+            </div>
+
+            {/* Domain Filter Bar */}
+            <div className="container mx-auto px-4 sm:px-6 mb-16 flex justify-center">
+              <div
+                role="tablist"
+                aria-label="Filter domains"
+                className="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-full bg-black/[0.04] border border-black/10 backdrop-blur-md shadow-sm"
+              >
+                {DOMAIN_FILTERS.map((filter) => {
+                  const isActive = selectedDomain === filter;
+                  return (
+                    <button
+                      key={filter}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setSelectedDomain(filter)}
+                      className={`relative rounded-full px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-bold uppercase tracking-wider transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 ${
+                        isActive ? "text-white" : "text-black/60 hover:text-black"
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId={
+                            prefersReducedMotion
+                              ? undefined
+                              : "team-domain-pill"
+                          }
+                          className="absolute inset-0 -z-10 rounded-full bg-[#111315] shadow-[0_5px_15px_rgba(0,0,0,0.15)]"
+                          transition={{
+                            type: "spring",
+                            stiffness: 380,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <span>{filter === "ALL" ? "All Domains" : filter}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Domain Cards List */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedDomain}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.4, ease: EASE_OUT_EXPO }}
+                className="w-full space-y-24 md:space-y-32"
+              >
+                {displayedDomains.map((domain) => {
+                  const domainIndex = DOMAINS.findIndex(
+                    (d) => d.title === domain.title,
+                  );
+                  return (
+                    <DomainSection
+                      key={domain.title}
+                      domain={domain}
+                      index={domainIndex}
+                    />
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
+          </section>
         </div>
       </div>
     </>

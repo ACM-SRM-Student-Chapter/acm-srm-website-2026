@@ -436,7 +436,7 @@ export default function Footer() {
             <p
               className={`text-xs text-foreground/40 leading-relaxed max-w-[200px] ${playfair.className} italic`}
             >
-              Part of the world's largest educational computing society.
+              Part of the world&apos;s largest educational computing society.
             </p>
           </motion.div>
         </div>
@@ -453,12 +453,14 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center items-center gap-5 text-[11px] font-bold uppercase tracking-widest text-foreground/40">
             <Link
               href="/privacy"
+              prefetch={false}
               className="transition-colors hover:text-acm-blue focus-visible:outline-none focus-visible:text-acm-blue"
             >
               Privacy Policy
             </Link>
             <Link
               href="/terms"
+              prefetch={false}
               className="transition-colors hover:text-acm-blue focus-visible:outline-none focus-visible:text-acm-blue"
             >
               Terms of Service

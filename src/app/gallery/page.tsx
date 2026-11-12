@@ -4,8 +4,6 @@ import {
   useState,
   useMemo,
   useCallback,
-  useRef,
-  useEffect,
   useTransition,
 } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -21,6 +19,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 type Category =
   | "ALL"
+  | "PromptWars"
   | "RECRUITMENT DRIVE 2026"
   | "SYMPOSIUM ON RESPONSIBLE AI"
   | "Team Moments";
@@ -76,6 +75,7 @@ const DomeGallery = dynamic(() => import("@/components/ui/DomeGallery"), {
 
 const CATEGORIES: Category[] = [
   "ALL",
+  "PromptWars",
   "RECRUITMENT DRIVE 2026",
   "SYMPOSIUM ON RESPONSIBLE AI",
   "Team Moments",
@@ -100,33 +100,65 @@ const RECRUITMENT_IMAGES: GalleryItem[] = [
   "/Gallery/Recruitment/IMG-20260405-WA0009.jpg",
   "/Gallery/Recruitment/IMG20260410191506.jpg",
   "/Gallery/Recruitment/i1.jpeg",
-  "/Gallery/Recruitment/12.jpeg",
+  "/Gallery/Recruitment/i2.jpeg",
   "/Gallery/Recruitment/i3.jpeg",
-  "/Gallery/Recruitment/14.jpeg",
+  "/Gallery/Recruitment/i4.jpeg",
   "/Gallery/Recruitment/i5.jpeg",
-  "/Gallery/Recruitment/16.jpeg",
-  "/Gallery/Recruitment/17.jpeg",
+  "/Gallery/Recruitment/i6.jpeg",
+  "/Gallery/Recruitment/i7.jpeg",
   "/Gallery/Recruitment/i8.jpeg",
   "/Gallery/Recruitment/i9.jpeg",
-  "/Gallery/Recruitment/110.jpeg",
+  "/Gallery/Recruitment/i10.jpeg",
   "/Gallery/Recruitment/i11.jpeg",
-  "/Gallery/Recruitment/112.jpeg",
+  "/Gallery/Recruitment/i12.jpeg",
   "/Gallery/Recruitment/i13.jpeg",
   "/Gallery/Recruitment/i14.jpeg",
-  "/Gallery/Recruitment/115.jpeg",
-  "/Gallery/Recruitment/116.jpeg",
+  "/Gallery/Recruitment/i15.jpeg",
+  "/Gallery/Recruitment/i16.jpeg",
   "/Gallery/Recruitment/i17.jpeg",
-  "/Gallery/Recruitment/118.jpeg",
+  "/Gallery/Recruitment/i18.jpeg",
   "/Gallery/Recruitment/i19.jpeg",
-  "/Gallery/Recruitment/120.jpeg",
+  "/Gallery/Recruitment/i20.jpeg",
   "/Gallery/Recruitment/i21.jpeg",
   "/Gallery/Recruitment/i22.jpeg",
   "/Gallery/Recruitment/i23.jpeg",
   "/Gallery/Recruitment/i24.jpeg",
   "/Gallery/Recruitment/i25.jpeg",
-  "/Gallery/Recruitment/126.jpeg",
+  "/Gallery/Recruitment/i26.jpeg",
   "/Gallery/Recruitment/i27.jpeg",
-].map((src): GalleryItem => ({ src, category: "RECRUITMENT DRIVE 2026" }));
+  "/Gallery/Recruitment/ajfhds.jpeg",
+  "/Gallery/Recruitment/asfkjdh.jpeg",
+  "/Gallery/Recruitment/d.jpeg",
+  "/Gallery/Recruitment/dkf.jpeg",
+  "/Gallery/Recruitment/dkfh.jpeg",
+  "/Gallery/Recruitment/dkj.jpeg",
+  "/Gallery/Recruitment/dmncb.jpeg",
+  "/Gallery/Recruitment/dsfkhdsf.jpeg",
+  "/Gallery/Recruitment/ei.jpeg",
+  "/Gallery/Recruitment/eu.jpeg",
+  "/Gallery/Recruitment/f.jpeg",
+  "/Gallery/Recruitment/fdhf].jpeg",
+  "/Gallery/Recruitment/fdksb.jpeg",
+  "/Gallery/Recruitment/fdskj.jpeg",
+  "/Gallery/Recruitment/fjkdsh.jpeg",
+  "/Gallery/Recruitment/fkhd.jpeg",
+  "/Gallery/Recruitment/fskj.jpeg",
+  "/Gallery/Recruitment/238.jpeg",
+  "/Gallery/Recruitment/iow.jpeg",
+  "/Gallery/Recruitment/iww.jpeg",
+  "/Gallery/Recruitment/jkf.jpeg",
+  "/Gallery/Recruitment/kfhsdf.jpeg",
+  "/Gallery/Recruitment/kjads.jpeg",
+  "/Gallery/Recruitment/sdf.jpeg",
+  "/Gallery/Recruitment/sdk.jpeg",
+  "/Gallery/Recruitment/skdfhds.jpeg",
+  "/Gallery/Recruitment/skfhdsh.jpeg",
+  "/Gallery/Recruitment/woidu.jpeg",
+  "/Gallery/Recruitment/id.jpeg",
+].map((src): GalleryItem => ({
+  src,
+  category: "RECRUITMENT DRIVE 2026",
+}));
 
 const SYMPOSIUM_IMAGES: GalleryItem[] = [
   "/Gallery/SYMPOSIUM_ON_RESPONSIBLE_AI/00a37094-d24b-417f-b9b0-bec717cd1e8c.JPG",
@@ -233,9 +265,185 @@ const TEAM_IMAGES: GalleryItem[] = [
   "/Gallery/Team_Moments/IMG_7794.jpg",
   "/Gallery/Team_Moments/IMG_7795.jpg",
   "/Gallery/Team_Moments/IMG_7797.jpg",
+  "/Gallery/Team_Moments/564.jpeg",
+  "/Gallery/Team_Moments/327643627.jpeg",
+  "/Gallery/Team_Moments/yueer.jpeg",
+  "/Gallery/Team_Moments/2432674.jpeg",
 ].map((src): GalleryItem => ({ src, category: "Team Moments" }));
 
+const PROMPTWARS_IMAGES: GalleryItem[] = [
+  "/Gallery/PromptWars/20261027_163559.jpg",
+  "/Gallery/PromptWars/20261027_164344.jpg",
+  "/Gallery/PromptWars/20261027_164357.jpg",
+  "/Gallery/PromptWars/20261027_164400.jpg",
+  "/Gallery/PromptWars/20261027_164402.jpg",
+  "/Gallery/PromptWars/20261027_173358.jpg",
+  "/Gallery/PromptWars/20261027_173821.jpg",
+  "/Gallery/PromptWars/20261027_174240.jpg",
+  "/Gallery/PromptWars/20261027_174245.jpg",
+  "/Gallery/PromptWars/4324.jpeg",
+  "/Gallery/PromptWars/45.jpeg",
+  "/Gallery/PromptWars/IMG_0364.jpg",
+  "/Gallery/PromptWars/IMG_0365.jpg",
+  "/Gallery/PromptWars/IMG_0368.jpg",
+  "/Gallery/PromptWars/IMG_0373.jpg",
+  "/Gallery/PromptWars/IMG_0374.jpg",
+  "/Gallery/PromptWars/IMG_0375.jpg",
+  "/Gallery/PromptWars/IMG_0376.jpg",
+  "/Gallery/PromptWars/IMG_0378.jpg",
+  "/Gallery/PromptWars/IMG_0379.jpg",
+  "/Gallery/PromptWars/IMG_0393.jpg",
+  "/Gallery/PromptWars/IMG_0399.jpg",
+  "/Gallery/PromptWars/IMG_0401.JPG",
+  "/Gallery/PromptWars/IMG_0406.JPG",
+  "/Gallery/PromptWars/IMG_0420.JPG",
+  "/Gallery/PromptWars/IMG_0421.JPG",
+  "/Gallery/PromptWars/IMG_1178.jpg",
+  "/Gallery/PromptWars/IMG_1179.jpg",
+  "/Gallery/PromptWars/IMG_1180.jpg",
+  "/Gallery/PromptWars/IMG_1188.jpg",
+  "/Gallery/PromptWars/IMG_1191.jpg",
+  "/Gallery/PromptWars/IMG_1192.jpg",
+  "/Gallery/PromptWars/IMG_1195.jpg",
+  "/Gallery/PromptWars/IMG_1197.jpg",
+  "/Gallery/PromptWars/IMG_1199.jpg",
+  "/Gallery/PromptWars/IMG_4147.jpg",
+  "/Gallery/PromptWars/IMG_8577.JPG",
+  "/Gallery/PromptWars/IMG_8578.JPG",
+  "/Gallery/PromptWars/IMG_8579.JPG",
+  "/Gallery/PromptWars/IMG_8580.JPG",
+  "/Gallery/PromptWars/IMG_8581.JPG",
+  "/Gallery/PromptWars/IMG_8582.JPG",
+  "/Gallery/PromptWars/IMG_8583.JPG",
+  "/Gallery/PromptWars/IMG_8585.JPG",
+  "/Gallery/PromptWars/IMG_8586.JPG",
+  "/Gallery/PromptWars/IMG_8587.JPG",
+  "/Gallery/PromptWars/IMG_8589.JPG",
+  "/Gallery/PromptWars/IMG_8590.JPG",
+  "/Gallery/PromptWars/IMG_8591.JPG",
+  "/Gallery/PromptWars/IMG_8592.JPG",
+  "/Gallery/PromptWars/IMG_8594.JPG",
+  "/Gallery/PromptWars/IMG_8595.JPG",
+  "/Gallery/PromptWars/IMG_8596.JPG",
+  "/Gallery/PromptWars/IMG_8597.JPG",
+  "/Gallery/PromptWars/IMG_8598.JPG",
+  "/Gallery/PromptWars/IMG_8609.JPG",
+  "/Gallery/PromptWars/IMG_8617.JPG",
+  "/Gallery/PromptWars/IMG_8618.JPG",
+  "/Gallery/PromptWars/IMG_8619.JPG",
+  "/Gallery/PromptWars/IMG_8620.JPG",
+  "/Gallery/PromptWars/IMG_8621.JPG",
+  "/Gallery/PromptWars/IMG_8622.JPG",
+  "/Gallery/PromptWars/IMG_8624.JPG",
+  "/Gallery/PromptWars/IMG_8625.JPG",
+  "/Gallery/PromptWars/IMG_8626.JPG",
+  "/Gallery/PromptWars/IMG_8627.JPG",
+  "/Gallery/PromptWars/IMG_8628.JPG",
+  "/Gallery/PromptWars/IMG_8629.JPG",
+  "/Gallery/PromptWars/IMG_8632.JPG",
+  "/Gallery/PromptWars/IMG_8633.JPG",
+  "/Gallery/PromptWars/IMG_8634.JPG",
+  "/Gallery/PromptWars/IMG_8635.JPG",
+  "/Gallery/PromptWars/IMG_8636.JPG",
+  "/Gallery/PromptWars/IMG_8637.JPG",
+  "/Gallery/PromptWars/IMG_8640.JPG",
+  "/Gallery/PromptWars/IMG_8641.JPG",
+  "/Gallery/PromptWars/IMG_8642.JPG",
+  "/Gallery/PromptWars/IMG_8643.JPG",
+  "/Gallery/PromptWars/IMG_8646.JPG",
+  "/Gallery/PromptWars/IMG_8650.JPG",
+  "/Gallery/PromptWars/IMG_8651.JPG",
+  "/Gallery/PromptWars/IMG_8652.JPG",
+  "/Gallery/PromptWars/IMG_8654.JPG",
+  "/Gallery/PromptWars/IMG_8656.JPG",
+  "/Gallery/PromptWars/IMG_8657.JPG",
+  "/Gallery/PromptWars/IMG_8658.JPG",
+  "/Gallery/PromptWars/IMG_8659.JPG",
+  "/Gallery/PromptWars/IMG_8660.JPG",
+  "/Gallery/PromptWars/IMG_8661.JPG",
+  "/Gallery/PromptWars/IMG_8662.JPG",
+  "/Gallery/PromptWars/IMG_8663.JPG",
+  "/Gallery/PromptWars/IMG_8667.JPG",
+  "/Gallery/PromptWars/IMG_8668.JPG",
+  "/Gallery/PromptWars/IMG_8670.JPG",
+  "/Gallery/PromptWars/IMG_8672.JPG",
+  "/Gallery/PromptWars/IMG_8673.JPG",
+  "/Gallery/PromptWars/IMG_8674%20copy.JPG",
+  "/Gallery/PromptWars/IMG_8674.JPG",
+  "/Gallery/PromptWars/IMG_8676.JPG",
+  "/Gallery/PromptWars/IMG_8677.JPG",
+  "/Gallery/PromptWars/IMG_8678.JPG",
+  "/Gallery/PromptWars/IMG_8679.JPG",
+  "/Gallery/PromptWars/IMG_8680.JPG",
+  "/Gallery/PromptWars/IMG_8681.JPG",
+  "/Gallery/PromptWars/IMG_8682.JPG",
+  "/Gallery/PromptWars/IMG_8683.JPG",
+  "/Gallery/PromptWars/IMG_8684.JPG",
+  "/Gallery/PromptWars/IMG_8685.JPG",
+  "/Gallery/PromptWars/IMG_8686.JPG",
+  "/Gallery/PromptWars/IMG_8687.JPG",
+  "/Gallery/PromptWars/IMG_8688.JPG",
+  "/Gallery/PromptWars/IMG_8689.JPG",
+  "/Gallery/PromptWars/IMG_8690.JPG",
+  "/Gallery/PromptWars/IMG_8691.JPG",
+  "/Gallery/PromptWars/IMG_8692.JPG",
+  "/Gallery/PromptWars/IMG_8693.JPG",
+  "/Gallery/PromptWars/IMG_8694.JPG",
+  "/Gallery/PromptWars/IMG_8695.JPG",
+  "/Gallery/PromptWars/IMG_8696.JPG",
+  "/Gallery/PromptWars/IMG_8697.JPG",
+  "/Gallery/PromptWars/IMG_8698.JPG",
+  "/Gallery/PromptWars/IMG_8700.JPG",
+  "/Gallery/PromptWars/IMG_8701.JPG",
+  "/Gallery/PromptWars/IMG_8702.JPG",
+  "/Gallery/PromptWars/IMG_8703.JPG",
+  "/Gallery/PromptWars/IMG_8704.JPG",
+  "/Gallery/PromptWars/IMG_8706.JPG",
+  "/Gallery/PromptWars/IMG_8707.JPG",
+  "/Gallery/PromptWars/IMG_8708.JPG",
+  "/Gallery/PromptWars/IMG_8709.JPG",
+  "/Gallery/PromptWars/IMG_8710.JPG",
+  "/Gallery/PromptWars/IMG_8711.JPG",
+  "/Gallery/PromptWars/IMG_8712.JPG",
+  "/Gallery/PromptWars/IMG_8713.JPG",
+  "/Gallery/PromptWars/IMG_8714.JPG",
+  "/Gallery/PromptWars/IMG_8715.JPG",
+  "/Gallery/PromptWars/IMG_8716.JPG",
+  "/Gallery/PromptWars/IMG_8717.JPG",
+  "/Gallery/PromptWars/IMG_8718.JPG",
+  "/Gallery/PromptWars/IMG_8719.JPG",
+  "/Gallery/PromptWars/IMG_8720.JPG",
+  "/Gallery/PromptWars/IMG_8724.JPG",
+  "/Gallery/PromptWars/IMG_8725.JPG",
+  "/Gallery/PromptWars/IMG_8727.JPG",
+  "/Gallery/PromptWars/IMG_8728.JPG",
+  "/Gallery/PromptWars/IMG_8729.JPG",
+  "/Gallery/PromptWars/IMG_8730.JPG",
+  "/Gallery/PromptWars/IMG_8731.JPG",
+  "/Gallery/PromptWars/IMG_8732.JPG",
+  "/Gallery/PromptWars/IMG_8733.JPG",
+  "/Gallery/PromptWars/IMG_8736.JPG",
+  "/Gallery/PromptWars/IMG_8737.JPG",
+  "/Gallery/PromptWars/IMG_8739.JPG",
+  "/Gallery/PromptWars/IMG_8740.JPG",
+  "/Gallery/PromptWars/IMG_8741.JPG",
+  "/Gallery/PromptWars/IMG_8742.JPG",
+  "/Gallery/PromptWars/IMG_8749%20copy.JPG",
+  "/Gallery/PromptWars/IMG_8749.JPG",
+  "/Gallery/PromptWars/IMG_8750.JPG",
+  "/Gallery/PromptWars/IMG_8751.JPG",
+  "/Gallery/PromptWars/IMG_8752.JPG",
+  "/Gallery/PromptWars/eew.jpeg",
+  "/Gallery/PromptWars/ewre.jpeg",
+  "/Gallery/PromptWars/rg.jpeg",
+  "/Gallery/PromptWars/wq.jpeg",
+].map((src): GalleryItem => ({
+  src,
+  category: "PromptWars",
+}));
+
 const ALL_GALLERY_DATA: GalleryItem[] = [
+  ...PROMPTWARS_IMAGES,
   ...RECRUITMENT_IMAGES,
   ...SYMPOSIUM_IMAGES,
   ...TEAM_IMAGES,
@@ -243,6 +451,7 @@ const ALL_GALLERY_DATA: GalleryItem[] = [
 
 const CATEGORY_COUNTS: Record<Category, number> = {
   ALL: ALL_GALLERY_DATA.length,
+  PromptWars: PROMPTWARS_IMAGES.length,
   "RECRUITMENT DRIVE 2026": RECRUITMENT_IMAGES.length,
   "SYMPOSIUM ON RESPONSIBLE AI": SYMPOSIUM_IMAGES.length,
   "Team Moments": TEAM_IMAGES.length,
@@ -250,6 +459,7 @@ const CATEGORY_COUNTS: Record<Category, number> = {
 
 const SHORT_LABEL: Record<Category, string> = {
   ALL: "ALL",
+  PromptWars: "PROMPTWARS",
   "RECRUITMENT DRIVE 2026": "RECRUITMENT",
   "SYMPOSIUM ON RESPONSIBLE AI": "SYMPOSIUM",
   "Team Moments": "TEAM",
@@ -361,7 +571,7 @@ export default function GalleryPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12 flex flex-wrap justify-center gap-2 md:gap-3 will-change-transform"
+          className="mb-12 flex flex-wrap justify-center gap-2 md:gap-3"
           role="tablist"
         >
           {CATEGORIES.map((category) => {
@@ -377,7 +587,7 @@ export default function GalleryPage() {
                 {isActive && (
                   <motion.div
                     layoutId="gallery-filter-pill"
-                    className="absolute inset-0 -z-10 rounded-full bg-[#111315] shadow-[0_5px_15px_rgba(0,0,0,0.12)] will-change-transform"
+                    className="absolute inset-0 -z-10 rounded-full bg-[#111315] shadow-[0_5px_15px_rgba(0,0,0,0.12)]"
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   />
                 )}
@@ -402,10 +612,7 @@ export default function GalleryPage() {
           })}
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        <div
           className="relative w-full h-[75vh] min-h-[500px] max-h-[900px] overflow-hidden rounded-[2.5rem] border border-black/5 bg-[#111315] shadow-[0_20px_60px_rgba(0,0,0,0.15)] transform-gpu"
         >
           <AnimatePresence>
@@ -429,11 +636,11 @@ export default function GalleryPage() {
             fit={0.8}
             minRadius={600}
             maxVerticalRotationDeg={0}
-            segments={34}
+            segments={28}
             dragDampening={2}
             grayscale={false}
           />
-        </motion.div>
+        </div>
 
         <motion.p
           initial={{ opacity: 0 }}

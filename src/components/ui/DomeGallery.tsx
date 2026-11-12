@@ -3,7 +3,16 @@
 import { useEffect, useMemo, useRef, useCallback } from "react";
 import { useGesture } from "@use-gesture/react";
 
-// Extended type to include our new information
+declare global {
+  interface Window {
+    __closeDomeGalleryItem?: () => void;
+  }
+}
+
+type CustomCSSProperties = React.CSSProperties &
+  Record<string, string | number | undefined>;
+
+// Extended type to include image metadata
 type ImageItem =
   | string
   | { src: string; alt?: string; category?: string; description?: string };
@@ -39,12 +48,11 @@ type ItemDef = {
   sizeY: number;
 };
 
-// UPGRADE: Slower, more cinematic transition for the popup
 const DEFAULTS = {
-  maxVerticalRotationDeg: 5,
-  dragSensitivity: 20,
-  enlargeTransitionMs: 500, // Increased for premium feel
-  segments: 35,
+  maxVerticalRotationDeg: 0,
+  dragSensitivity: 22,
+  enlargeTransitionMs: 400,
+  segments: 28,
 };
 
 const clamp = (v: number, min: number, max: number) =>
@@ -60,8 +68,30 @@ const getDataNumber = (el: HTMLElement, name: string, fallback: number) => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+// Helper: Two-tier Next.js image optimization URL generator
+const getOptimizedThumbUrl = (src: string) => {
+  if (!src) return "";
+  try {
+    const clean = decodeURIComponent(src);
+    return `/_next/image?url=${encodeURIComponent(clean)}&w=384&q=60`;
+  } catch {
+    return `/_next/image?url=${encodeURIComponent(src)}&w=384&q=60`;
+  }
+};
+
+const getOptimizedLightboxUrl = (src: string) => {
+  if (!src) return "";
+  try {
+    const clean = decodeURIComponent(src);
+    return `/_next/image?url=${encodeURIComponent(clean)}&w=1200&q=80`;
+  } catch {
+    return `/_next/image?url=${encodeURIComponent(src)}&w=1200&q=80`;
+  }
+};
+
 function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
-  const xCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
+  const startX = -Math.floor(seg) - 1;
+  const xCols = Array.from({ length: seg }, (_, i) => startX + i * 2);
   const evenYs = [-4, -2, 0, 2, 4];
   const oddYs = [-3, -1, 1, 3, 5];
 
@@ -98,6 +128,7 @@ function buildItems(pool: ImageItem[], seg: number): ItemDef[] {
     (_, i) => normalizedImages[i % normalizedImages.length],
   );
 
+  // De-duplicate adjacent identical images where possible
   for (let i = 1; i < usedImages.length; i++) {
     if (usedImages[i].src === usedImages[i - 1].src) {
       for (let j = i + 1; j < usedImages.length; j++) {
@@ -135,7 +166,7 @@ function computeItemBaseRotation(
 
 export default function DomeGallery({
   images = [],
-  fit = 0.5,
+  fit = 0.8,
   fitBasis = "auto",
   minRadius = 600,
   maxRadius = Infinity,
@@ -146,11 +177,9 @@ export default function DomeGallery({
   enlargeTransitionMs = DEFAULTS.enlargeTransitionMs,
   segments = DEFAULTS.segments,
   dragDampening = 2,
-  openedImageWidth = "400px",
-  openedImageHeight = "400px",
   imageBorderRadius = "30px",
   openedImageBorderRadius = "30px",
-  grayscale = true,
+  grayscale = false,
 }: DomeGalleryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -195,79 +224,96 @@ export default function DomeGallery({
 
   const items = useMemo(() => buildItems(images, segments), [images, segments]);
 
-  const applyTransform = (xDeg: number, yDeg: number) => {
+  const applyTransform = useCallback((xDeg: number, yDeg: number) => {
     const el = sphereRef.current;
     if (el) {
-      el.style.transform = `translateZ(calc(var(--radius) * -1)) rotateX(${xDeg}deg) rotateY(${yDeg}deg)`;
+      el.style.transform = `translate3d(0, 0, calc(var(--radius) * -1)) rotateX(${xDeg.toFixed(2)}deg) rotateY(${yDeg.toFixed(2)}deg)`;
     }
-  };
+  }, []);
 
   const lockedRadiusRef = useRef<number | null>(null);
 
+  // Synchronous initial measurement + Debounced ResizeObserver
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    // DEBOUNCED RESIZE OBSERVER TO PREVENT HANGING ON WINDOW RESIZE
+    const measureAndApply = (w: number, h: number) => {
+      const minDim = Math.min(w, h);
+      const maxDim = Math.max(w, h);
+      const aspect = w / h;
+      let basis: number;
+      switch (fitBasis) {
+        case "min":
+          basis = minDim;
+          break;
+        case "max":
+          basis = maxDim;
+          break;
+        case "width":
+          basis = w;
+          break;
+        case "height":
+          basis = h;
+          break;
+        default:
+          basis = aspect >= 1.3 ? w : minDim;
+      }
+      let radius = basis * fit;
+      const heightGuard = h * 1.35;
+      radius = Math.min(radius, heightGuard);
+      radius = clamp(radius, minRadius, maxRadius);
+      lockedRadiusRef.current = Math.round(radius);
+
+      const viewerPad = Math.max(8, Math.round(minDim * padFactor));
+      root.style.setProperty("--radius", `${lockedRadiusRef.current}px`);
+      root.style.setProperty("--viewer-pad", `${viewerPad}px`);
+      root.style.setProperty("--overlay-blur-color", overlayBlurColor);
+      root.style.setProperty("--tile-radius", imageBorderRadius);
+      root.style.setProperty("--enlarge-radius", openedImageBorderRadius);
+      root.style.setProperty(
+        "--image-filter",
+        grayscale ? "grayscale(1)" : "none",
+      );
+      applyTransform(rotationRef.current.x, rotationRef.current.y);
+
+      const enlargedOverlay = viewerRef.current?.querySelector(
+        ".enlarge",
+      ) as HTMLElement;
+      if (enlargedOverlay && frameRef.current && mainRef.current) {
+        const frameR = frameRef.current.getBoundingClientRect();
+        const mainR = mainRef.current.getBoundingClientRect();
+        enlargedOverlay.style.left = `${frameR.left - mainR.left}px`;
+        enlargedOverlay.style.top = `${frameR.top - mainR.top}px`;
+        enlargedOverlay.style.width = `${frameR.width}px`;
+        enlargedOverlay.style.height = `${frameR.height}px`;
+      }
+    };
+
+    // 1. Synchronous initial measurement on mount to prevent layout shift
+    const initialRect = root.getBoundingClientRect();
+    if (initialRect.width > 0 && initialRect.height > 0) {
+      measureAndApply(initialRect.width, initialRect.height);
+    }
+
+    // 2. Mark data-ready in next RAF so CSS transitions only activate after stable layout
+    requestAnimationFrame(() => {
+      root.setAttribute("data-ready", "true");
+    });
+
+    // 3. Debounced observer for subsequent window resizing
     let resizeTimeout: ReturnType<typeof setTimeout>;
     const ro = new ResizeObserver((entries) => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         const cr = entries[0].contentRect;
-        const w = Math.max(1, cr.width),
-          h = Math.max(1, cr.height);
-        const minDim = Math.min(w, h),
-          maxDim = Math.max(w, h),
-          aspect = w / h;
-        let basis: number;
-        switch (fitBasis) {
-          case "min":
-            basis = minDim;
-            break;
-          case "max":
-            basis = maxDim;
-            break;
-          case "width":
-            basis = w;
-            break;
-          case "height":
-            basis = h;
-            break;
-          default:
-            basis = aspect >= 1.3 ? w : minDim;
-        }
-        let radius = basis * fit;
-        const heightGuard = h * 1.35;
-        radius = Math.min(radius, heightGuard);
-        radius = clamp(radius, minRadius, maxRadius);
-        lockedRadiusRef.current = Math.round(radius);
-
-        const viewerPad = Math.max(8, Math.round(minDim * padFactor));
-        root.style.setProperty("--radius", `${lockedRadiusRef.current}px`);
-        root.style.setProperty("--viewer-pad", `${viewerPad}px`);
-        root.style.setProperty("--overlay-blur-color", overlayBlurColor);
-        root.style.setProperty("--tile-radius", imageBorderRadius);
-        root.style.setProperty("--enlarge-radius", openedImageBorderRadius);
-        root.style.setProperty(
-          "--image-filter",
-          grayscale ? "grayscale(1)" : "none",
-        );
-        applyTransform(rotationRef.current.x, rotationRef.current.y);
-
-        const enlargedOverlay = viewerRef.current?.querySelector(
-          ".enlarge",
-        ) as HTMLElement;
-        if (enlargedOverlay && frameRef.current && mainRef.current) {
-          const frameR = frameRef.current.getBoundingClientRect();
-          const mainR = mainRef.current.getBoundingClientRect();
-          enlargedOverlay.style.left = `${frameR.left - mainR.left}px`;
-          enlargedOverlay.style.top = `${frameR.top - mainR.top}px`;
-          enlargedOverlay.style.width = `${frameR.width}px`;
-          enlargedOverlay.style.height = `${frameR.height}px`;
-        }
+        const w = Math.max(1, cr.width);
+        const h = Math.max(1, cr.height);
+        measureAndApply(w, h);
       }, 50);
     });
     ro.observe(root);
+
     return () => {
       ro.disconnect();
       clearTimeout(resizeTimeout);
@@ -282,11 +328,8 @@ export default function DomeGallery({
     grayscale,
     imageBorderRadius,
     openedImageBorderRadius,
+    applyTransform,
   ]);
-
-  useEffect(() => {
-    applyTransform(rotationRef.current.x, rotationRef.current.y);
-  }, []);
 
   const stopInertia = useCallback(() => {
     if (inertiaRAF.current) {
@@ -329,8 +372,118 @@ export default function DomeGallery({
       stopInertia();
       inertiaRAF.current = requestAnimationFrame(step);
     },
-    [dragDampening, maxVerticalRotationDeg, stopInertia],
+    [dragDampening, maxVerticalRotationDeg, stopInertia, applyTransform],
   );
+
+  const openItemFromElement = useCallback((el: HTMLElement) => {
+    if (openingRef.current) return;
+    openingRef.current = true;
+    openStartedAtRef.current = performance.now();
+    lockScroll();
+
+    const parent = el.parentElement as HTMLElement;
+    focusedElRef.current = el;
+    el.setAttribute("data-focused", "true");
+
+    const rawSrc =
+      parent.dataset.src ||
+      (el.querySelector("img") as HTMLImageElement)?.dataset.rawSrc ||
+      (el.querySelector("img") as HTMLImageElement)?.src ||
+      "";
+    const rawAlt =
+      parent.dataset.alt ||
+      (el.querySelector("img") as HTMLImageElement)?.alt ||
+      "";
+
+    const offsetX = getDataNumber(parent, "offsetX", 0);
+    const offsetY = getDataNumber(parent, "offsetY", 0);
+    const sizeX = getDataNumber(parent, "sizeX", 2);
+    const sizeY = getDataNumber(parent, "sizeY", 2);
+    const parentRot = computeItemBaseRotation(
+      offsetX,
+      offsetY,
+      sizeX,
+      sizeY,
+      segments,
+    );
+
+    let rotY = -(
+      (normalizeAngle(parentRot.rotateY) +
+        normalizeAngle(rotationRef.current.y)) %
+      360
+    );
+    if (rotY < -180) rotY += 360;
+    const rotX = -parentRot.rotateX - rotationRef.current.x;
+
+    parent.style.setProperty("--rot-y-delta", `${rotY}deg`);
+    parent.style.setProperty("--rot-x-delta", `${rotX}deg`);
+
+    const refDiv = document.createElement("div");
+    refDiv.className = "item__image item__image--reference opacity-0";
+    refDiv.style.transform = `rotateX(${-parentRot.rotateX}deg) rotateY(${-parentRot.rotateY}deg)`;
+    parent.appendChild(refDiv);
+    void refDiv.offsetHeight;
+
+    const tileR = refDiv.getBoundingClientRect();
+    const mainR = mainRef.current?.getBoundingClientRect();
+    const frameR = frameRef.current?.getBoundingClientRect();
+
+    if (!mainR || !frameR || tileR.width <= 0 || tileR.height <= 0) {
+      openingRef.current = false;
+      focusedElRef.current = null;
+      parent.removeChild(refDiv);
+      unlockScroll();
+      return;
+    }
+
+    originalTilePositionRef.current = {
+      left: tileR.left,
+      top: tileR.top,
+      width: tileR.width,
+      height: tileR.height,
+    };
+    el.style.visibility = "hidden";
+
+    const overlay = document.createElement("div");
+    overlay.className = "enlarge";
+    overlay.style.cssText = `position:absolute; left:${frameR.left - mainR.left}px; top:${frameR.top - mainR.top}px; width:${frameR.width}px; height:${frameR.height}px; opacity:0; z-index:30; will-change:transform,opacity; transform-origin:top left; transition:transform ${enlargeTransitionMs}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${enlargeTransitionMs}ms ease; border-radius:${openedImageBorderRadius}; overflow:hidden; box-shadow:0 30px 100px rgba(0,0,0,0.6); cursor: default;`;
+
+    // Glassmorphism close button
+    const closeBtn = document.createElement("button");
+    closeBtn.onclick = () => window.__closeDomeGalleryItem?.();
+    closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+    closeBtn.style.cssText = `position:absolute; top:24px; right:24px; width:44px; height:44px; background:rgba(0,0,0,0.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; cursor:pointer; z-index:40; opacity:0; transition:opacity 0.3s ease, transform 0.2s ease; transform:scale(0.9);`;
+    closeBtn.onmouseover = () => (closeBtn.style.transform = "scale(1.08)");
+    closeBtn.onmouseout = () => (closeBtn.style.transform = "scale(1)");
+
+    const img = document.createElement("img");
+    img.src = getOptimizedLightboxUrl(rawSrc);
+    img.onerror = () => {
+      // Fallback to raw path if next/image route has issue
+      img.src = rawSrc;
+    };
+    img.alt = rawAlt;
+    img.style.cssText = `width:100%; height:100%; object-fit:contain; background-color: rgba(6,0,16,0.95); filter:${grayscale ? "grayscale(1)" : "none"}; pointer-events: none;`;
+
+    overlay.appendChild(img);
+    overlay.appendChild(closeBtn);
+
+    viewerRef.current!.appendChild(overlay);
+
+    const validSx0 = Math.max(tileR.width / frameR.width, 0.01);
+    const validSy0 = Math.max(tileR.height / frameR.height, 0.01);
+
+    overlay.style.transform = `translate(${tileR.left - frameR.left}px, ${tileR.top - frameR.top}px) scale(${validSx0}, ${validSy0})`;
+
+    setTimeout(() => {
+      if (!overlay.parentElement) return;
+      overlay.style.opacity = "1";
+      overlay.style.transform = "translate(0px, 0px) scale(1, 1)";
+      closeBtn.style.opacity = "1";
+      closeBtn.style.transform = "scale(1)";
+      rootRef.current?.setAttribute("data-enlarging", "true");
+    }, 16);
+  }, [enlargeTransitionMs, grayscale, lockScroll, openedImageBorderRadius, segments, unlockScroll]);
 
   useGesture(
     {
@@ -338,7 +491,9 @@ export default function DomeGallery({
         if (focusedElRef.current) return;
         stopInertia();
         const evt = event as PointerEvent;
-        pointerTypeRef.current = (evt.pointerType as any) || "mouse";
+        const pType = evt.pointerType;
+        pointerTypeRef.current =
+          pType === "touch" || pType === "pen" ? pType : "mouse";
         if (pointerTypeRef.current === "touch") evt.preventDefault();
         if (pointerTypeRef.current === "touch") lockScroll();
         draggingRef.current = true;
@@ -436,6 +591,7 @@ export default function DomeGallery({
     { target: mainRef, eventOptions: { passive: false } },
   );
 
+  // Scrim & Close handler
   useEffect(() => {
     const scrim = scrimRef.current;
     if (!scrim) return;
@@ -521,7 +677,7 @@ export default function DomeGallery({
           rootRef.current?.removeAttribute("data-enlarging");
           requestAnimationFrame(() => {
             parent.style.transition = "";
-            el.style.transition = "opacity 300ms ease-out";
+            el.style.transition = "opacity 250ms ease-out";
             requestAnimationFrame(() => {
               el.style.opacity = "1";
               setTimeout(() => {
@@ -533,7 +689,7 @@ export default function DomeGallery({
                   rootRef.current?.getAttribute("data-enlarging") !== "true"
                 )
                   document.body.classList.remove("dg-scroll-lock");
-              }, 300);
+              }, 250);
             });
           });
         });
@@ -544,10 +700,8 @@ export default function DomeGallery({
       });
     };
 
-    // Close on scrim click OR close button click
     scrim.addEventListener("click", close);
-    // Bind global close event to window so the injected button can trigger it
-    (window as any).__closeDomeGalleryItem = close;
+    window.__closeDomeGalleryItem = close;
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
@@ -557,127 +711,85 @@ export default function DomeGallery({
     return () => {
       scrim.removeEventListener("click", close);
       window.removeEventListener("keydown", onKey);
-      delete (window as any).__closeDomeGalleryItem;
+      delete window.__closeDomeGalleryItem;
     };
   }, [enlargeTransitionMs, openedImageBorderRadius, grayscale]);
 
-  const openItemFromElement = (el: HTMLElement) => {
-    if (openingRef.current) return;
-    openingRef.current = true;
-    openStartedAtRef.current = performance.now();
-    lockScroll();
-
-    const parent = el.parentElement as HTMLElement;
-    focusedElRef.current = el;
-    el.setAttribute("data-focused", "true");
-
-    const rawSrc =
-      parent.dataset.src ||
-      (el.querySelector("img") as HTMLImageElement)?.src ||
-      "";
-    const rawAlt =
-      parent.dataset.alt ||
-      (el.querySelector("img") as HTMLImageElement)?.alt ||
-      "";
-
-    const offsetX = getDataNumber(parent, "offsetX", 0);
-    const offsetY = getDataNumber(parent, "offsetY", 0);
-    const sizeX = getDataNumber(parent, "sizeX", 2);
-    const sizeY = getDataNumber(parent, "sizeY", 2);
-    const parentRot = computeItemBaseRotation(
-      offsetX,
-      offsetY,
-      sizeX,
-      sizeY,
-      segments,
-    );
-
-    let rotY = -(
-      (normalizeAngle(parentRot.rotateY) +
-        normalizeAngle(rotationRef.current.y)) %
-      360
-    );
-    if (rotY < -180) rotY += 360;
-    const rotX = -parentRot.rotateX - rotationRef.current.x;
-
-    parent.style.setProperty("--rot-y-delta", `${rotY}deg`);
-    parent.style.setProperty("--rot-x-delta", `${rotX}deg`);
-
-    const refDiv = document.createElement("div");
-    refDiv.className = "item__image item__image--reference opacity-0";
-    refDiv.style.transform = `rotateX(${-parentRot.rotateX}deg) rotateY(${-parentRot.rotateY}deg)`;
-    parent.appendChild(refDiv);
-    void refDiv.offsetHeight;
-
-    const tileR = refDiv.getBoundingClientRect();
-    const mainR = mainRef.current?.getBoundingClientRect();
-    const frameR = frameRef.current?.getBoundingClientRect();
-
-    if (!mainR || !frameR || tileR.width <= 0 || tileR.height <= 0) {
-      openingRef.current = false;
-      focusedElRef.current = null;
-      parent.removeChild(refDiv);
-      unlockScroll();
-      return;
-    }
-
-    originalTilePositionRef.current = {
-      left: tileR.left,
-      top: tileR.top,
-      width: tileR.width,
-      height: tileR.height,
-    };
-    el.style.visibility = "hidden";
-
-    const overlay = document.createElement("div");
-    overlay.className = "enlarge";
-    // UPGRADE: Uses EASE_OUT_EXPO cubic-bezier for a cinematic, premium scale-up effect
-    overlay.style.cssText = `position:absolute; left:${frameR.left - mainR.left}px; top:${frameR.top - mainR.top}px; width:${frameR.width}px; height:${frameR.height}px; opacity:0; z-index:30; will-change:transform,opacity; transform-origin:top left; transition:transform ${enlargeTransitionMs}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${enlargeTransitionMs}ms ease; border-radius:${openedImageBorderRadius}; overflow:hidden; box-shadow:0 30px 100px rgba(0,0,0,0.6); cursor: default;`;
-
-    // UPGRADE: Added a beautiful Glassmorphism close button
-    const closeBtn = document.createElement("button");
-    closeBtn.onclick = () => (window as any).__closeDomeGalleryItem();
-    closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-    closeBtn.style.cssText = `position:absolute; top:50px; right:24px; width:48px; height:48px; background:rgba(0,0,0,0.5); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; cursor:pointer; z-index:40; opacity:0; transition:opacity 0.4s ease, transform 0.2s ease; transform:scale(0.9);`;
-    closeBtn.onmouseover = () => (closeBtn.style.transform = "scale(1.05)");
-    closeBtn.onmouseout = () => (closeBtn.style.transform = "scale(1)");
-
-    const img = document.createElement("img");
-    img.src = rawSrc;
-    img.alt = rawAlt;
-    img.style.cssText = `width:100%; height:100%; object-fit:contain; background-color: rgba(0,0,0,0.8); filter:${grayscale ? "grayscale(1)" : "none"}; pointer-events: none;`;
-
-    overlay.appendChild(img);
-    overlay.appendChild(closeBtn);
-
-    viewerRef.current!.appendChild(overlay);
-
-    const validSx0 = Math.max(tileR.width / frameR.width, 0.01);
-    const validSy0 = Math.max(tileR.height / frameR.height, 0.01);
-
-    overlay.style.transform = `translate(${tileR.left - frameR.left}px, ${tileR.top - frameR.top}px) scale(${validSx0}, validSy0)`;
-
-    setTimeout(() => {
-      if (!overlay.parentElement) return;
-      overlay.style.opacity = "1";
-      overlay.style.transform = "translate(0px, 0px) scale(1, 1)";
-      closeBtn.style.opacity = "1";
-      closeBtn.style.transform = "scale(1)";
-      rootRef.current?.setAttribute("data-enlarging", "true");
-    }, 16);
-  };
-
   const cssStyles = `
-    .sphere-root { --radius: 520px; --viewer-pad: 72px; --circ: calc(var(--radius) * 3.14); --rot-y: calc((360deg / var(--segments-x)) / 2); --rot-x: calc((360deg / var(--segments-y)) / 2); --item-width: calc(var(--circ) / var(--segments-x)); --item-height: calc(var(--circ) / var(--segments-y)); }
+    .sphere-root {
+      --radius: ${minRadius}px;
+      --viewer-pad: 72px;
+      --circ: calc(var(--radius) * 3.14159);
+      --rot-y: calc((360deg / var(--segments-x)) / 2);
+      --rot-x: calc((360deg / var(--segments-y)) / 2);
+      --item-width: calc(var(--circ) / var(--segments-x));
+      --item-height: calc(var(--circ) / var(--segments-y));
+      contain: layout paint style;
+    }
     .sphere-root * { box-sizing: border-box; }
-    .sphere, .sphere-item, .item__image { transform-style: preserve-3d; }
-    .stage { width: 100%; height: 100%; display: grid; place-items: center; position: absolute; inset: 0; margin: auto; perspective: calc(var(--radius) * 2); perspective-origin: 50% 50%; }
-    .sphere { transform: translateZ(calc(var(--radius) * -1)); will-change: transform; position: absolute; }
-    .sphere-item { width: calc(var(--item-width) * var(--item-size-x)); height: calc(var(--item-height) * var(--item-size-y)); position: absolute; top: -999px; bottom: -999px; left: -999px; right: -999px; margin: auto; transform-origin: 50% 50%; backface-visibility: hidden; transition: transform 300ms; transform: rotateY(calc(var(--rot-y) * (var(--offset-x) + ((var(--item-size-x) - 1) / 2)) + var(--rot-y-delta, 0deg))) rotateX(calc(var(--rot-x) * (var(--offset-y) - ((var(--item-size-y) - 1) / 2)) + var(--rot-x-delta, 0deg))) translateZ(var(--radius)); }
-    .sphere-root[data-enlarging="true"] .scrim { opacity: 1 !important; pointer-events: all !important; }
-    .item__image { position: absolute; inset: 10px; border-radius: var(--tile-radius, 12px); overflow: hidden; cursor: zoom-in; backface-visibility: hidden; transition: transform 300ms; pointer-events: auto; transform: translateZ(0); }
-    .item__image:hover { transform: translateZ(20px) scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10; }
-    .item__image--reference { position: absolute; inset: 10px; pointer-events: none; }
+    .stage {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      perspective: calc(var(--radius) * 2);
+      perspective-origin: 50% 50%;
+      contain: strict;
+    }
+    .sphere {
+      transform-style: preserve-3d;
+      transform: translate3d(0, 0, calc(var(--radius) * -1));
+      will-change: transform;
+      position: absolute;
+    }
+    .sphere-item {
+      transform-style: preserve-3d;
+      width: calc(var(--item-width) * var(--item-size-x));
+      height: calc(var(--item-height) * var(--item-size-y));
+      position: absolute;
+      top: -999px;
+      bottom: -999px;
+      left: -999px;
+      right: -999px;
+      margin: auto;
+      transform-origin: 50% 50%;
+      backface-visibility: hidden;
+      transition: none;
+      transform: rotateY(calc(var(--rot-y) * (var(--offset-x) + ((var(--item-size-x) - 1) / 2)) + var(--rot-y-delta, 0deg)))
+                 rotateX(calc(var(--rot-x) * (var(--offset-y) - ((var(--item-size-y) - 1) / 2)) + var(--rot-x-delta, 0deg)))
+                 translateZ(var(--radius));
+    }
+    .sphere-root[data-ready="true"] .sphere-item {
+      transition: transform 250ms ease-out;
+    }
+    .sphere-root[data-enlarging="true"] .scrim {
+      opacity: 1 !important;
+      pointer-events: all !important;
+    }
+    .item__image {
+      position: absolute;
+      inset: 10px;
+      border-radius: var(--tile-radius, 12px);
+      overflow: hidden;
+      cursor: zoom-in;
+      backface-visibility: hidden;
+      pointer-events: auto;
+      contain: paint;
+      transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+    }
+    .item__image:hover {
+      transform: scale(1.06);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 10;
+    }
+    .item__image--reference {
+      position: absolute;
+      inset: 10px;
+      pointer-events: none;
+    }
   `;
 
   return (
@@ -688,13 +800,13 @@ export default function DomeGallery({
         className="sphere-root relative w-full h-full"
         style={
           {
-            ["--segments-x" as any]: segments,
-            ["--segments-y" as any]: segments,
-            ["--overlay-blur-color" as any]: overlayBlurColor,
-            ["--tile-radius" as any]: imageBorderRadius,
-            ["--enlarge-radius" as any]: openedImageBorderRadius,
-            ["--image-filter" as any]: grayscale ? "grayscale(1)" : "none",
-          } as React.CSSProperties
+            "--segments-x": segments,
+            "--segments-y": segments,
+            "--overlay-blur-color": overlayBlurColor,
+            "--tile-radius": imageBorderRadius,
+            "--enlarge-radius": openedImageBorderRadius,
+            "--image-filter": grayscale ? "grayscale(1)" : "none",
+          } as CustomCSSProperties
         }
       >
         <main
@@ -716,19 +828,19 @@ export default function DomeGallery({
                   data-size-y={it.sizeY}
                   style={
                     {
-                      ["--offset-x" as any]: it.x,
-                      ["--offset-y" as any]: it.y,
-                      ["--item-size-x" as any]: it.sizeX,
-                      ["--item-size-y" as any]: it.sizeY,
+                      "--offset-x": it.x,
+                      "--offset-y": it.y,
+                      "--item-size-x": it.sizeX,
+                      "--item-size-y": it.sizeY,
                       top: "-999px",
                       bottom: "-999px",
                       left: "-999px",
                       right: "-999px",
-                    } as React.CSSProperties
+                    } as CustomCSSProperties
                   }
                 >
                   <div
-                    className="item__image absolute block overflow-hidden cursor-pointer bg-gray-900 transition-transform duration-300 will-change-transform"
+                    className="item__image absolute block overflow-hidden cursor-pointer bg-gray-900"
                     role="button"
                     tabIndex={0}
                     onClick={(e) => {
@@ -757,13 +869,24 @@ export default function DomeGallery({
                       backfaceVisibility: "hidden",
                     }}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={it.src}
+                      src={getOptimizedThumbUrl(it.src)}
+                      data-raw-src={it.src}
                       draggable={false}
                       alt={it.alt}
-                      // PERFORMANCE UPGRADE: Async decoding stops massive high-res images from freezing the main thread
                       decoding="async"
-                      loading="lazy"
+                      loading={i < 36 ? "eager" : "lazy"}
+                      fetchPriority={i < 16 ? "high" : "low"}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.triedFallback) {
+                          target.dataset.triedFallback = "true";
+                          target.src = it.src;
+                        } else {
+                          target.style.display = "none";
+                        }
+                      }}
                       className="w-full h-full object-cover pointer-events-none"
                       style={{
                         backfaceVisibility: "hidden",
@@ -798,17 +921,15 @@ export default function DomeGallery({
             className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center"
             style={{ padding: "var(--viewer-pad)" }}
           >
-            {/* UPGRADE: Increased blur density for a premium glass backdrop */}
             <div
               ref={scrimRef}
-              className="scrim absolute inset-0 z-10 pointer-events-none opacity-0 transition-opacity duration-500"
+              className="scrim absolute inset-0 z-10 pointer-events-none opacity-0 transition-opacity duration-300"
               style={{
                 background: "rgba(0, 0, 0, 0.85)",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
               }}
             />
-            {/* Increased Size Frame for the Clicked Image */}
             <div
               ref={frameRef}
               className="viewer-frame w-[90vw] max-w-6xl h-[85vh] max-h-[900px] flex will-change-transform"
